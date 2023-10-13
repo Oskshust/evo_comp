@@ -1,6 +1,6 @@
 import csv
 import numpy as np
-import random
+import math
 import matplotlib.pyplot as plt
 
 
@@ -33,10 +33,10 @@ def get_coords_n_costs(path: str):
 
 
 def random_solution(matrix):
-    n =  matrix.shape[0] // 2
+    n = math.ceil(matrix.shape[0] / 2)
 
     # I wonder whether it should be even simpler or it is ok to leave it in this form
-    sol = np.array(random.sample(range(matrix.shape[0]), n))
+    sol = np.array(np.random.choice(matrix.shape[0], size=n, replace=False))
     
     cost = sum(matrix[sol[i-1], sol[i]] for i in range(n))
     
@@ -45,7 +45,8 @@ def random_solution(matrix):
 
 def show_solution(path, solution):
     coords, node_costs = get_coords_n_costs(path)
-    plt.scatter(coords[:, 0], coords[:, 1], c=node_costs, cmap='gray')
+    plt.figure(figsize=(10, 10))
+    plt.scatter(coords[:, 0], coords[:, 1], c=node_costs, cmap='plasma')
 
     best_tour_coords = np.append(solution, solution[0])
     plt.plot(coords[best_tour_coords, 0], coords[best_tour_coords, 1], 'r-')
