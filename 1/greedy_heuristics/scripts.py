@@ -91,12 +91,10 @@ def get_dist_nn_matrix(path: str):
     return distances
 
 
-def nn_solution(matrix, matrix_nn):
+def nn_solution(matrix, matrix_nn, v1):
     nn_matrix = matrix_nn.copy()
     n = math.ceil(matrix.shape[0] / 2)
 
-    # choosing first solution randomly
-    v1 = np.random.choice(matrix.shape[0])
     v = v1
     sol = [v1]
 
@@ -120,8 +118,8 @@ def run_nn_exp(path: str):
     
     solutions = []
 
-    for _ in range(200):
-        solutions.append(nn_solution(matrix, nn_matrix))
+    for v in range(200):
+        solutions.append(nn_solution(matrix, nn_matrix, v1=v))
 
     costs = np.array([cost for sol, cost in solutions])
     best_sol, best_cost = min(solutions, key=lambda x: x[1])
