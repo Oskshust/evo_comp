@@ -9,7 +9,7 @@ def get_dist_matrix(path: str, with_node_cost: bool):
         reader = csv.reader(f, delimiter=';')
         data = list(reader)
 
-    data = np.array(data).astype(int)
+    data = np.array(data).astype(float)
 
     coords = data[:, :2]
     costs = data[:, 2]
@@ -17,10 +17,10 @@ def get_dist_matrix(path: str, with_node_cost: bool):
     distances = np.round(np.sqrt(np.sum((coords[:, None, :] - coords[None, :, :]) ** 2, axis=-1))).astype(float)
     distances[distances == 0] = np.inf
 
-    if not with_node_cost:
-        return distances
+    if with_node_cost:
+        return distances + costs
 
-    return distances + costs
+    return distances
 
 
 def get_coords_n_costs(path: str):
@@ -95,7 +95,6 @@ def nn_solution(matrix, matrix_nn, v1):
         v = nn
         sol.append(v)
     
-    sol.append(v1)
     cost = sum(matrix[sol[i-1], sol[i]] for i in range(n))
     
     return sol, cost
