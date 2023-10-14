@@ -15,25 +15,12 @@ def get_dist_matrix(path: str, with_node_cost: bool):
     costs = data[:, 2]
 
     distances = np.round(np.sqrt(np.sum((coords[:, None, :] - coords[None, :, :]) ** 2, axis=-1))).astype(float)
+    distances[distances == 0] = np.inf
 
     if not with_node_cost:
         return distances
 
     return distances + costs
-
-# def get_dist_nn_matrix(path: str):
-#     with open(path, 'r') as f:
-#         reader = csv.reader(f, delimiter=';')
-#         data = list(reader)
-
-#     data = np.array(data).astype(int)
-
-#     coords = data[:, :2]
-
-#     distances = np.round(np.sqrt(np.sum((coords[:, None, :] - coords[None, :, :]) ** 2, axis=-1))).astype(float)
-#     distances[distances == 0] = np.inf
-
-#     return distances
 
 
 def get_coords_n_costs(path: str):
@@ -52,6 +39,7 @@ def get_coords_n_costs(path: str):
 def random_solution(matrix):
     n = math.ceil(matrix.shape[0] / 2)
 
+    # I wonder whether it should be even simpler or it is ok to leave it in this form
     sol = np.array(np.random.choice(matrix.shape[0], size=n, replace=False))
     
     cost = sum(matrix[sol[i-1], sol[i]] for i in range(n))
