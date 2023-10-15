@@ -4,19 +4,23 @@ import math
 import matplotlib.pyplot as plt
 
 
-def get_dist_matrix(path: str):
+def get_dist_matrix(path: str, with_node_cost: bool):
     with open(path, 'r') as f:
         reader = csv.reader(f, delimiter=';')
         data = list(reader)
 
-    data = np.array(data).astype(int)
+    data = np.array(data).astype(float)
 
     coords = data[:, :2]
     costs = data[:, 2]
 
-    distances = np.round(np.sqrt(np.sum((coords[:, None, :] - coords[None, :, :]) ** 2, axis=-1))).astype(int)
+    distances = np.round(np.sqrt(np.sum((coords[:, None, :] - coords[None, :, :]) ** 2, axis=-1))).astype(float)
+    distances[distances == 0] = np.inf
 
-    return distances + costs
+    if with_node_cost:
+        return distances + costs
+
+    return distances
 
 
 def get_coords_n_costs(path: str):
@@ -43,7 +47,7 @@ def random_solution(matrix):
     return sol, cost
 
 
-def show_solution(path, solution):
+def show_solution(path, solution, title):
     coords, node_costs = get_coords_n_costs(path)
     plt.figure(figsize=(10, 10))
     plt.scatter(coords[:, 0], coords[:, 1], c=node_costs, cmap='plasma')
@@ -52,12 +56,12 @@ def show_solution(path, solution):
     plt.plot(coords[best_tour_coords, 0], coords[best_tour_coords, 1], 'r-')
 
     plt.colorbar(label='Cost')
-    plt.title('Best Tour')
+    plt.title(title)
     plt.show()
 
 
 def run_random_exp(path: str):
-    matrix = get_dist_matrix(path)
+    matrix = get_dist_matrix(path, True)
     
     solutions = []
 
@@ -73,4 +77,46 @@ def run_random_exp(path: str):
     print("Worst cost: " + str(worst_cost))
     print("Mean cost after 200 solutions: " + str(avg_cost))
     
-    show_solution(path, best_sol)
+    show_solution(path, best_sol, title="Best Tour")
+
+
+def nn_solution(matrix, matrix_nn, v1):
+    nn_matrix = matrix_nn.copy()
+    n = math.ceil(matrix.shape[0] / 2)
+
+    v = v1
+    sol = [v1]
+
+    # choosing the next n-1 solutions
+    for i in range(n-1):
+        nn = np.argmin(nn_matrix[v])
+        nn_matrix[v, :] = np.inf
+        nn_matrix[:, v] = np.inf
+        v = nn
+        sol.append(v)
+    
+    cost = sum(matrix[sol[i-1], sol[i]] for i in range(n))
+    
+    return sol, cost
+
+
+def run_nn_exp(path: str):
+    matrix = get_dist_matrix(path, True)
+    nn_matrix = get_dist_matrix(path, False)
+    
+    solutions = []
+
+    for v in range(200):
+        solutions.append(nn_solution(matrix, nn_matrix, v1=v))
+
+    costs = np.array([cost for sol, cost in solutions])
+    best_sol, best_cost = min(solutions, key=lambda x: x[1])
+    worst_sol, worst_cost = max(solutions, key=lambda x: x[1])
+    avg_cost = np.mean(costs)
+    
+    print("Best cost: " + str(best_cost))
+    print("Worst cost: " + str(worst_cost))
+    print("Mean cost after 200 solutions: " + str(avg_cost))
+    
+    show_solution(path, best_sol, title="Best Tour")
+    show_solution(path, worst_sol, title="Worst Tour")
