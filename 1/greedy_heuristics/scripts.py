@@ -47,7 +47,7 @@ def random_solution(matrix):
     return sol, cost
 
 
-def show_solution(path, solution):
+def show_solution(path, solution, title):
     coords, node_costs = get_coords_n_costs(path)
     plt.figure(figsize=(10, 10))
     plt.scatter(coords[:, 0], coords[:, 1], c=node_costs, cmap='plasma')
@@ -56,7 +56,7 @@ def show_solution(path, solution):
     plt.plot(coords[best_tour_coords, 0], coords[best_tour_coords, 1], 'r-')
 
     plt.colorbar(label='Cost')
-    plt.title('Best Tour')
+    plt.title(title)
     plt.show()
 
 
@@ -77,7 +77,7 @@ def run_random_exp(path: str):
     print("Worst cost: " + str(worst_cost))
     print("Mean cost after 200 solutions: " + str(avg_cost))
     
-    show_solution(path, best_sol)
+    show_solution(path, best_sol, title="Best Tour")
 
 
 def nn_solution(matrix, matrix_nn, v1):
@@ -111,11 +111,12 @@ def run_nn_exp(path: str):
 
     costs = np.array([cost for sol, cost in solutions])
     best_sol, best_cost = min(solutions, key=lambda x: x[1])
-    worst_cost = np.max(costs)
+    worst_sol, worst_cost = max(solutions, key=lambda x: x[1])
     avg_cost = np.mean(costs)
     
     print("Best cost: " + str(best_cost))
     print("Worst cost: " + str(worst_cost))
     print("Mean cost after 200 solutions: " + str(avg_cost))
     
-    show_solution(path, best_sol)
+    show_solution(path, best_sol, title="Best Tour")
+    show_solution(path, worst_sol, title="Worst Tour")
