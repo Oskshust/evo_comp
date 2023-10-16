@@ -5,14 +5,7 @@ import matplotlib.pyplot as plt
 
 
 def get_dist_matrix(path: str, with_node_cost: bool):
-    with open(path, 'r') as f:
-        reader = csv.reader(f, delimiter=';')
-        data = list(reader)
-
-    data = np.array(data).astype(float)
-
-    coords = data[:, :2]
-    costs = data[:, 2]
+    coords, costs = get_coords_n_costs(path)
 
     distances = np.round(np.sqrt(np.sum((coords[:, None, :] - coords[None, :, :]) ** 2, axis=-1))).astype(float)
     distances[distances == 0] = np.inf
@@ -41,10 +34,14 @@ def random_solution(matrix):
 
     # I wonder whether it should be even simpler or it is ok to leave it in this form
     sol = np.array(np.random.choice(matrix.shape[0], size=n, replace=False))
-    
-    cost = sum(matrix[sol[i-1], sol[i]] for i in range(n))
-    
+
+    cost = calculate_cost(sol, matrix)
+
     return sol, cost
+
+
+def calculate_cost(solution, matrix):
+    return sum(matrix[solution[i-1], solution[i]] for i in range(len(solution)))
 
 
 def show_solution(path, solution, title):
@@ -62,7 +59,7 @@ def show_solution(path, solution, title):
 
 def run_random_exp(path: str):
     matrix = get_dist_matrix(path, True)
-    
+
     solutions = []
 
     for _ in range(200):
@@ -72,11 +69,11 @@ def run_random_exp(path: str):
     best_sol, best_cost = min(solutions, key=lambda x: x[1])
     worst_cost = np.max(costs)
     avg_cost = np.mean(costs)
-    
+
     print("Best cost: " + str(best_cost))
     print("Worst cost: " + str(worst_cost))
     print("Mean cost after 200 solutions: " + str(avg_cost))
-    
+
     show_solution(path, best_sol, title="Best Tour")
 
 
@@ -103,7 +100,7 @@ def nn_solution(matrix, matrix_nn, v1):
 def run_nn_exp(path: str):
     matrix = get_dist_matrix(path, True)
     nn_matrix = get_dist_matrix(path, False)
-    
+
     solutions = []
 
     for v in range(200):
@@ -113,10 +110,74 @@ def run_nn_exp(path: str):
     best_sol, best_cost = min(solutions, key=lambda x: x[1])
     worst_sol, worst_cost = max(solutions, key=lambda x: x[1])
     avg_cost = np.mean(costs)
-    
+
     print("Best cost: " + str(best_cost))
     print("Worst cost: " + str(worst_cost))
     print("Mean cost after 200 solutions: " + str(avg_cost))
+
+    show_solution(path, best_sol, title="Best Tour")
+    show_solution(path, worst_sol, title="Worst Tour")
+
+
+def greedy_solution(matrix_src, start_v):
+    matrix = matrix_src.copy()
+    n = math.ceil(matrix.shape[0] / 2)
     
+    next_v = np.argmin(matrix[start_v])
+
+    cycle = [start_v, next_v]
+    cost = calculate_cost(cycle, matrix_src)
+    matrix[[start_v, next_v], :] = np.inf
+    matrix[:, [start_v, next_v]] = np.inf
+
+    for _ in range(n - 2):
+        best_new_cost = np.inf
+        best_new_cycle = cycle
+        chosen_v = 0
+        
+        for i, v in enumerate(cycle):
+            new_v = np.argmin(matrix[v])
+            new_cycle = cycle[:i] + [new_v] + cycle[i:]            
+            new_cost = calculate_cost(new_cycle, matrix_src)
+
+            if new_cost < best_new_cost:
+                best_new_cycle = new_cycle
+                best_new_cost = new_cost
+                chosen_v = new_v
+
+            new_cycle = cycle[:i+1] + [new_v] + cycle[i+1:]       
+            new_cost = calculate_cost(new_cycle, matrix_src)
+
+            if new_cost < best_new_cost:
+                best_new_cycle = new_cycle
+                best_new_cost = new_cost
+                chosen_v = new_v
+
+        cycle = best_new_cycle
+        cost = best_new_cost
+        matrix[chosen_v, :] = np.inf
+        matrix[:, chosen_v] = np.inf
+
+    return cycle, cost
+
+
+def run_greedy_experiment(path: str):
+    matrix = get_dist_matrix(path, True)
+
+    solutions = []
+
+    for v in range(5):
+        solutions.append(greedy_solution(matrix, v))
+
+    print(solutions[0])
+    costs = np.array([cost for sol, cost in solutions])
+    best_sol, best_cost = min(solutions, key=lambda x: x[1])
+    worst_sol, worst_cost = max(solutions, key=lambda x: x[1])
+    avg_cost = np.mean(costs)
+
+    print("Best cost: " + str(best_cost))
+    print("Worst cost: " + str(worst_cost))
+    print("Mean cost after 200 solutions: " + str(avg_cost))
+
     show_solution(path, best_sol, title="Best Tour")
     show_solution(path, worst_sol, title="Worst Tour")
