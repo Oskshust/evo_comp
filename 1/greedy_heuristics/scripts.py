@@ -127,35 +127,25 @@ def greedy_solution(matrix_src, start_v):
 
     cycle = [start_v, next_v]
     cost = calculate_cost(cycle, matrix_src)
-    matrix[[start_v, next_v], :] = np.inf
     matrix[:, [start_v, next_v]] = np.inf
 
     for _ in range(n - 2):
         best_new_cost = np.inf
         best_new_cycle = cycle
         chosen_v = 0
-        
+
         for i, v in enumerate(cycle):
-            new_v = np.argmin(matrix[v])
-            new_cycle = cycle[:i] + [new_v] + cycle[i:]            
+            closest_v = np.argmin(matrix[v])
+            new_cycle = cycle[:i] + [closest_v] + cycle[i:]            
             new_cost = calculate_cost(new_cycle, matrix_src)
 
             if new_cost < best_new_cost:
                 best_new_cycle = new_cycle
                 best_new_cost = new_cost
-                chosen_v = new_v
-
-            new_cycle = cycle[:i+1] + [new_v] + cycle[i+1:]       
-            new_cost = calculate_cost(new_cycle, matrix_src)
-
-            if new_cost < best_new_cost:
-                best_new_cycle = new_cycle
-                best_new_cost = new_cost
-                chosen_v = new_v
+                chosen_v = closest_v
 
         cycle = best_new_cycle
         cost = best_new_cost
-        matrix[chosen_v, :] = np.inf
         matrix[:, chosen_v] = np.inf
 
     return cycle, cost
@@ -166,10 +156,9 @@ def run_greedy_experiment(path: str):
 
     solutions = []
 
-    for v in range(5):
+    for v in range(200):
         solutions.append(greedy_solution(matrix, v))
 
-    print(solutions[0])
     costs = np.array([cost for sol, cost in solutions])
     best_sol, best_cost = min(solutions, key=lambda x: x[1])
     worst_sol, worst_cost = max(solutions, key=lambda x: x[1])
