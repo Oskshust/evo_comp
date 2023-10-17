@@ -74,8 +74,8 @@ def run_random_exp(path: str):
     show_solution(path, best_sol, title="Best Tour")
 
 
-def nn_solution(matrix, matrix_nn, v1):
-    nn_matrix = matrix_nn.copy()
+def nn_solution(matrix, v1):
+    nn_matrix = matrix.copy()
     n = math.ceil(matrix.shape[0] / 2)
 
     v = v1
@@ -96,12 +96,11 @@ def nn_solution(matrix, matrix_nn, v1):
 
 def run_nn_exp(path: str):
     matrix = get_dist_matrix(path)
-    nn_matrix = get_dist_matrix(path)
 
     solutions = []
 
     for v in range(200):
-        solutions.append(nn_solution(matrix, nn_matrix, v1=v))
+        solutions.append(nn_solution(matrix, v1=v))
 
     costs = np.array([cost for sol, cost in solutions])
     best_sol, best_cost = min(solutions, key=lambda x: x[1])
