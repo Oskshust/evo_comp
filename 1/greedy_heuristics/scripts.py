@@ -4,16 +4,13 @@ import math
 import matplotlib.pyplot as plt
 
 
-def get_dist_matrix(path: str, with_node_cost: bool):
+def get_dist_matrix(path: str):
     coords, costs = get_coords_n_costs(path)
 
     distances = np.round(np.sqrt(np.sum((coords[:, None, :] - coords[None, :, :]) ** 2, axis=-1))).astype(float)
     distances[distances == 0] = np.inf
 
-    if with_node_cost:
-        return distances + costs
-
-    return distances
+    return distances + costs
 
 
 def get_coords_n_costs(path: str):
@@ -58,7 +55,7 @@ def show_solution(path, solution, title):
 
 
 def run_random_exp(path: str):
-    matrix = get_dist_matrix(path, True)
+    matrix = get_dist_matrix(path)
 
     solutions = []
 
@@ -77,8 +74,8 @@ def run_random_exp(path: str):
     show_solution(path, best_sol, title="Best Tour")
 
 
-def nn_solution(matrix, matrix_nn, v1):
-    nn_matrix = matrix_nn.copy()
+def nn_solution(matrix, v1):
+    nn_matrix = matrix.copy()
     n = math.ceil(matrix.shape[0] / 2)
 
     v = v1
@@ -98,13 +95,12 @@ def nn_solution(matrix, matrix_nn, v1):
 
 
 def run_nn_exp(path: str):
-    matrix = get_dist_matrix(path, True)
-    nn_matrix = get_dist_matrix(path, False)
+    matrix = get_dist_matrix(path)
 
     solutions = []
 
     for v in range(200):
-        solutions.append(nn_solution(matrix, nn_matrix, v1=v))
+        solutions.append(nn_solution(matrix, v1=v))
 
     costs = np.array([cost for sol, cost in solutions])
     best_sol, best_cost = min(solutions, key=lambda x: x[1])
@@ -152,7 +148,7 @@ def greedy_solution(matrix_src, start_v):
 
 
 def run_greedy_experiment(path: str):
-    matrix = get_dist_matrix(path, True)
+    matrix = get_dist_matrix(path)
 
     solutions = []
 
