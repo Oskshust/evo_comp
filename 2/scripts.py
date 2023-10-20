@@ -39,44 +39,58 @@ def show_solution(path, solution, title):
     plt.title(title)
     plt.show()
 
-def regret2(matrix_src, start_v):
-    matrix = matrix_src.copy()
+def find_regret_with_solution(solution, vertex_id, matrix):
+    costs = []
+    solutions = []
+    for i in range(len(solution)):
+        new_sol = solution[:i] + [vertex_id] + solution[i:]
+        solutions.append(new_sol)
+        costs.append(calculate_cost(new_sol, matrix))
+    cost1, sol1, cost2, sol2 = get_2_best_costs_n_sols(costs, solutions)
+    return cost2 - cost1, sol1
+    
+def get_2_best_costs_n_sols(costs, solutions):
+    first = np.argmin(costs)
+    cost1 = costs[first]
+    sol1 = solutions[first]
+    costs = np.delete(costs, cost1)
+    solutions = np.delete(solutions, sol1)
+    second = np.argmin(costs)
+    cost2 = costs[second]
+    sol2 = solutions[second]
+    return cost1, sol1, cost2, sol2
+
+def regret2(matrix, start_v):
     n = math.ceil(matrix.shape[0] / 2)
     
     next_v = np.argmin(matrix[start_v])
 
     cycle = [start_v, next_v]
-    cost = calculate_cost(cycle, matrix_src)
-    matrix[:, [start_v, next_v]] = np.inf
+
+    unvisited = np.arange(len(matrix))
+    unvisited = np.delete(unvisited, [start_v, next_v])
+    visited = set([start_v, next_v])
 
     for _ in range(n - 2):
-        best_new_cost = np.inf
-        best_new_cycle = cycle
-        chosen_v = 0
+        regrets = [np.inf]*len(unvisited)
+        new_sols = [np.inf]*len(unvisited)
+        
+        for free_vertex_id in range(len(unvisited)):
+            reg, sol = find_regret_with_solution(cycle, unvisited[free_vertex_id], matrix)
+            regrets[free_vertex_id] = reg
+            new_sols[free_vertex_id] = sol
+        
+        highest_reg_id = np.argmax(regrets)
+        cycle = new_sols[highest_reg_id]
+        visited.add(unvisited[highest_reg_id])
 
-        for i, v in enumerate(cycle):
-            closest_v = np.argmin(matrix[v])
-            new_cycle = cycle[:i] + [closest_v] + cycle[i:]            
-            new_cost = calculate_cost(new_cycle, matrix_src)
-
-            if new_cost < best_new_cost:
-                best_new_cycle = new_cycle
-                best_new_cost = new_cost
-                chosen_v = closest_v
-
-        cycle = best_new_cycle
-        cost = best_new_cost
-        matrix[:, chosen_v] = np.inf
-
-    return cycle, cost
-
+    return cycle, calculate_cost(cycle, matrix)
 
 def run_regret2_experiment(path: str):
     matrix = get_dist_matrix(path)
-
     solutions = []
 
-    for v in range(200):
+    for v in range(2):
         solutions.append(regret2(matrix, v))
 
     costs = np.array([cost for sol, cost in solutions])
