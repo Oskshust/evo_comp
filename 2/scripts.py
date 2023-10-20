@@ -42,23 +42,21 @@ def show_solution(path, solution, title):
 def find_regret_with_solution(solution, vertex_id, matrix):
     costs = []
     solutions = []
-    for i in range(len(solution)):
+    for i in range(len(solution)+1):
         new_sol = solution[:i] + [vertex_id] + solution[i:]
         solutions.append(new_sol)
         costs.append(calculate_cost(new_sol, matrix))
-    cost1, sol1, cost2, sol2 = get_2_best_costs_n_sols(costs, solutions)
-    return cost2 - cost1, sol1
+    return get_regret_n_sol(costs, solutions)
     
-def get_2_best_costs_n_sols(costs, solutions):
+def get_regret_n_sol(costs, solutions):
     first = np.argmin(costs)
     cost1 = costs[first]
-    sol1 = solutions[first]
-    costs = np.delete(costs, cost1)
-    solutions = np.delete(solutions, sol1)
+    sol = solutions[first]
+    costs = np.delete(costs, first)
+    solutions = np.delete(solutions, first)
     second = np.argmin(costs)
     cost2 = costs[second]
-    sol2 = solutions[second]
-    return cost1, sol1, cost2, sol2
+    return cost2 - cost1, sol
 
 def regret2(matrix, start_v):
     n = math.ceil(matrix.shape[0] / 2)
@@ -69,7 +67,7 @@ def regret2(matrix, start_v):
 
     unvisited = np.arange(len(matrix))
     unvisited = np.delete(unvisited, [start_v, next_v])
-    visited = set([start_v, next_v])
+    # visited = set([start_v, next_v])
 
     for _ in range(n - 2):
         regrets = [np.inf]*len(unvisited)
@@ -82,7 +80,8 @@ def regret2(matrix, start_v):
         
         highest_reg_id = np.argmax(regrets)
         cycle = new_sols[highest_reg_id]
-        visited.add(unvisited[highest_reg_id])
+        unvisited = np.delete(unvisited, highest_reg_id)
+        # visited.add(unvisited[highest_reg_id])
 
     return cycle, calculate_cost(cycle, matrix)
 
@@ -90,7 +89,7 @@ def run_regret2_experiment(path: str):
     matrix = get_dist_matrix(path)
     solutions = []
 
-    for v in range(2):
+    for v in range(200):
         solutions.append(regret2(matrix, v))
 
     costs = np.array([cost for sol, cost in solutions])
