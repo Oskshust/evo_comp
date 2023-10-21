@@ -6,7 +6,7 @@
 |-----------|----------|----------|
 | 148244    | Winiecki | Radosław |
 | 148245    | Szudzik  | Oskar    |
-| 148246    | Kasicka  | Alicja   | (1st assignment)
+| 148246    | Kasicka  | Alicja (1st assignment)  |
 
 ## Assignment 1
 

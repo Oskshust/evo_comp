@@ -42,12 +42,32 @@ def show_solution(path, solution, title):
 def find_regret_with_solution(solution, vertex_id, matrix):
     costs = []
     solutions = []
-    for i in range(len(solution)+1):
-        new_sol = solution[:i] + [vertex_id] + solution[i:]
-        solutions.append(new_sol)
-        costs.append(calculate_cost(new_sol, matrix))
-    return get_regret_n_sol(costs, solutions)
     
+    # 1st idea
+    # for i in range(len(solution)+1):
+        # new_sol = solution[:i] + [vertex_id] + solution[i:]
+        # solutions.append(new_sol)
+        # costs.append(calculate_cost(new_sol, matrix))
+    # return get_regret_n_sol(costs, solutions)
+    
+    # 2nd idea - just two closest possibilities.
+    temp_matrix = matrix.copy()
+    nn1_id = None
+    while nn1_id not in solution:
+        nn1_id = np.argmin(temp_matrix[vertex_id])
+        temp_matrix[vertex_id][nn1_id] = np.inf
+    nn2_id = None
+    while nn2_id not in solution:
+        nn2_id = np.argmin(temp_matrix[vertex_id])
+        temp_matrix[vertex_id][nn2_id] = np.inf
+
+    sol1 = solution[:nn1_id] + [vertex_id] + solution[nn1_id:]
+    sol2 = solution[:nn2_id] + [vertex_id] + solution[nn2_id:]
+    # solutions.append(sol1)
+    # costs.append(calculate_cost(sol1, matrix))
+    return calculate_cost(sol2, matrix) - calculate_cost(sol1, matrix), sol1
+    
+
 def get_regret_n_sol(costs, solutions):
     first = np.argmin(costs)
     cost1 = costs[first]
@@ -67,7 +87,6 @@ def regret2(matrix, start_v):
 
     unvisited = np.arange(len(matrix))
     unvisited = np.delete(unvisited, [start_v, next_v])
-    # visited = set([start_v, next_v])
 
     for _ in range(n - 2):
         regrets = [np.inf]*len(unvisited)
@@ -81,7 +100,6 @@ def regret2(matrix, start_v):
         highest_reg_id = np.argmax(regrets)
         cycle = new_sols[highest_reg_id]
         unvisited = np.delete(unvisited, highest_reg_id)
-        # visited.add(unvisited[highest_reg_id])
 
     return cycle, calculate_cost(cycle, matrix)
 
