@@ -150,7 +150,7 @@ def run_weighted_experiment(path: str):
     matrix = get_dist_matrix(path)
     solutions = []
 
-    for v in range(5):
+    for v in range(200):
         solutions.append(weighted_regret(matrix, v, 0.5))
 
     costs = np.array([cost for sol, cost in solutions])
