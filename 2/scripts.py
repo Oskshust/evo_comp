@@ -16,6 +16,7 @@ def get_coords_n_costs(path: str):
 
     return coords, costs
 
+
 def get_dist_matrix(path: str):
     coords, costs = get_coords_n_costs(path)
 
@@ -24,8 +25,10 @@ def get_dist_matrix(path: str):
 
     return distances + costs
 
+
 def calculate_cost(solution, matrix):
     return sum(matrix[solution[i-1], solution[i]] for i in range(len(solution)))
+
 
 def show_solution(path, solution, title):
     coords, node_costs = get_coords_n_costs(path)
@@ -39,6 +42,7 @@ def show_solution(path, solution, title):
     plt.title(title)
     plt.show()
 
+
 def find_regret_with_solution(solution, vertex_id, matrix):
     costs = []
     solutions = []
@@ -48,6 +52,7 @@ def find_regret_with_solution(solution, vertex_id, matrix):
         costs.append(calculate_cost(new_sol, matrix))
     return get_regret_n_sol(costs, solutions)
 
+
 def get_regret_n_sol(costs, solutions):
     first = np.argmin(costs)
     cost1 = costs[first]
@@ -56,6 +61,7 @@ def get_regret_n_sol(costs, solutions):
     second = np.argmin(costs)
     cost2 = costs[second]
     return cost2 - cost1, sol
+
 
 def regret2(matrix, start_v):
     n = math.ceil(matrix.shape[0] / 2)
@@ -81,15 +87,71 @@ def regret2(matrix, start_v):
         highest_reg_id = np.argmax(regrets)
         cycle = new_sols[highest_reg_id]
         unvisited[highest_reg_id] = False
-    # print(cycle)
+
     return cycle, calculate_cost(cycle, matrix)
+
+
+def weighted_regret(matrix, start_v, weight):
+    n = math.ceil(matrix.shape[0] / 2)
+    
+    next_v = np.argmin(matrix[start_v])
+
+    cycle = [start_v, next_v]
+    current_cost = calculate_cost(cycle, matrix)
+
+    unvisited = np.ones(len(matrix), dtype='bool')
+    unvisited[start_v] = False
+    unvisited[next_v] = False
+
+    for _ in range(n - 2):
+        scores = -np.ones(shape=unvisited.shape) * np.inf
+        new_costs = np.zeros(shape=unvisited.shape)
+        new_sols = np.zeros(shape=unvisited.shape, dtype=np.ndarray)
+
+        for vertex_id in np.where(unvisited == True)[0]:
+            regret, solution = find_regret_with_solution(cycle, vertex_id, matrix)
+            new_cost = calculate_cost(solution, matrix)
+            increase = new_cost - current_cost
+            
+            score = weight * regret - (1 - weight) * increase
+            scores[vertex_id] = score
+            new_sols[vertex_id] = solution
+            new_costs[vertex_id] = new_cost
+
+        highest_score_id = np.argmax(scores)
+        cycle = new_sols[highest_score_id]
+        unvisited[highest_score_id] = False
+        current_cost = new_costs[highest_score_id]
+
+    return cycle, current_cost
+
 
 def run_regret2_experiment(path: str):
     matrix = get_dist_matrix(path)
     solutions = []
 
-    for v in range(2):
+    for v in range(200):
         solutions.append(regret2(matrix, v))
+
+    costs = np.array([cost for sol, cost in solutions])
+    best_sol, best_cost = min(solutions, key=lambda x: x[1])
+    worst_sol, worst_cost = max(solutions, key=lambda x: x[1])
+    avg_cost = np.mean(costs)
+
+    print("Best cost: " + str(best_cost))
+    print("Worst cost: " + str(worst_cost))
+    print("Mean cost after 200 solutions: " + str(avg_cost))
+
+    show_solution(path, best_sol, title="Best Tour")
+    show_solution(path, worst_sol, title="Worst Tour")
+
+
+def run_weighted_experiment(path: str):
+    matrix = get_dist_matrix(path)
+    solutions = []
+
+    for v in range(5):
+        solutions.append(weighted_regret(matrix, v, 0.5))
 
     costs = np.array([cost for sol, cost in solutions])
     best_sol, best_cost = min(solutions, key=lambda x: x[1])
