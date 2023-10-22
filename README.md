@@ -6,10 +6,10 @@
 |-----------|----------|----------|
 | 148244    | Winiecki | Radosław |
 | 148245    | Szudzik  | Oskar    |
-| 148246    | Kasicka  | Alicja (1st assignment)  |
 
 ## Assignment 1
 
+(together with - Kasicka Alicja)
 Greedy heuristics: https://github.com/Oskshust/evo_comp/tree/main/1
 
 ## Assignment 2
