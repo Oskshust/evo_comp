@@ -128,8 +128,16 @@ def random_solution(matrix):
     return sol, cost
 
 
-def calculate_delta():
-    return 0
+# s_id - id of vertex solution-wise, m_id - id of vertex martix-wise
+def calculate_delta(solution, matrix, m_id_in, s_id_out):
+    prev_vertex = solution[s_id_out - 1]
+    next_vertex = solution[(s_id_out + 1) % len(solution)]  # Use modulo for wrap-around
+
+    cost_out = matrix[prev_vertex][solution[s_id_out]] + matrix[solution[s_id_out]][next_vertex]
+
+    cost_in = matrix[prev_vertex][m_id_in] + matrix[m_id_in][next_vertex]
+
+    return cost_in - cost_out
 
 
 def get_neighbourhood_2n(solution, num_neighbors=10):
