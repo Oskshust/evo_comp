@@ -131,7 +131,7 @@ def random_solution(matrix):
 # s_id - id of vertex solution-wise, m_id - id of vertex martix-wise
 def calculate_delta(solution, matrix, m_id_in, s_id_out):
     prev_vertex = solution[s_id_out - 1]
-    next_vertex = solution[(s_id_out + 1) % len(solution)]  # Use modulo for wrap-around
+    next_vertex = solution[(s_id_out + 1) % len(solution)]
 
     cost_out = matrix[prev_vertex][solution[s_id_out]] + matrix[solution[s_id_out]][next_vertex]
 
@@ -140,41 +140,48 @@ def calculate_delta(solution, matrix, m_id_in, s_id_out):
     return cost_in - cost_out
 
 
-def get_neighbourhood_2n(solution, num_neighbors=10):
-    neighbors = []
-    
-    # intra-route
-    for i in range(len(solution)):
-        for j in range(i + 1, min(i + num_neighbors + 1, len(solution))):
-            neighbor = solution.copy()
-            neighbor[i], neighbor[j] = neighbor[j], neighbor[i]
-            neighbors.append(neighbor)
-            if len(neighbors) >= num_neighbors:
-                return neighbors
-    
-    all_nodes = set() 
-    available_nodes = list(all_nodes - set(solution))
-    
-    # inter-route
-    for i in range(len(solution)):
-        for j in range(min(num_neighbors, len(available_nodes))):
-            neighbor = solution.copy()
-            neighbor[i] = available_nodes[j]
-            neighbors.append(neighbor)
-            if len(neighbors) >= num_neighbors:
-                return neighbors
-    
-    return neighbors
+def get_neighbourhood_2n(solution, matrix, num_swaps=20, num_replacements=20):
+ neighbors = []
+ 
+ # intra-route
+ for i in range(len(solution)):
+    for j in range(i + 1, i + num_swaps):
+        neighbor = solution.copy()
+        neighbor[i], neighbor[(j + i) % len(solution)] = neighbor[(j + i) % len(solution)], neighbor[i]
+        delta = calculate_delta(solution, matrix, neighbor[i], (j + i) % len(solution))
+        neighbors.append((neighbor, delta))
+ 
+ all_nodes = set(range(matrix.shape[0]))
+ available_nodes = list(all_nodes - set(solution))
+ 
+ # inter-route
+ for i in range(len(solution)):
+    for j in range(min(num_replacements, len(available_nodes))):
+        neighbor = solution.copy()
+        neighbor[i] = available_nodes[j]
+        delta = calculate_delta(solution, matrix, neighbor[i], i)
+        neighbors.append((neighbor, delta))
+ 
+ return neighbors
 
 
 def steepest_2n(matrix, starting_sol):
-    best_sol = starting_sol
-    neighbourhood = get_neighbourhood_2n(starting_sol)
-    while len(neighbourhood):
-        best_sol = neighbourhood[index]
-        neighbourhood = get_neighbourhood_2n(best_sol)
-        
-    return None
+ best_sol = starting_sol
+ best_delta = 0
+ neighbourhood = get_neighbourhood_2n(starting_sol, matrix)
+ 
+ while len(neighbourhood):
+     delta_improved = False
+     for neighbor, delta in neighbourhood:
+         if delta < best_delta:
+             best_sol = neighbor
+             best_delta = delta
+             delta_improved = True
+     if not delta_improved:
+         break
+     neighbourhood = get_neighbourhood_2n(best_sol, matrix)
+     
+ return best_sol, calculate_cost(best_sol, matrix)
 
 
 def run_steepest_2n_r_experiment(path: str):
@@ -182,7 +189,7 @@ def run_steepest_2n_r_experiment(path: str):
     solutions = []
 
     for v in range(200):
-        solutions.append(steepest_2n(matrix, random_solution(matrix)))
+        solutions.append(steepest_2n(matrix, random_solution(matrix)[0]))
 
     costs = np.array([cost for sol, cost in solutions])
     best_sol, best_cost = min(solutions, key=lambda x: x[1])
