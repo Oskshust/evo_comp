@@ -140,48 +140,46 @@ def calculate_delta(solution, matrix, m_id_in, s_id_out):
     return cost_in - cost_out
 
 
-def get_neighbourhood_2n(solution, matrix, num_swaps=20, num_replacements=20):
- neighbors = []
+def get_neighbourhood_2n(solution, matrix, num_swaps=40, num_replacements=40):
+    neighbors = []
  
- # intra-route
- for i in range(len(solution)):
-    for j in range(i + 1, i + num_swaps):
-        neighbor = solution.copy()
-        neighbor[i], neighbor[(j + i) % len(solution)] = neighbor[(j + i) % len(solution)], neighbor[i]
-        delta = calculate_delta(solution, matrix, neighbor[i], (j + i) % len(solution))
-        neighbors.append((neighbor, delta))
+    # intra-route
+    for i in range(len(solution)):
+        for j in range(i + 1, i + num_swaps):
+            neighbor = solution.copy()
+            neighbor[i], neighbor[(j + i) % len(solution)] = neighbor[(j + i) % len(solution)], neighbor[i]
+            delta = calculate_delta(solution, matrix, neighbor[i], (j + i) % len(solution))
+            neighbors.append((neighbor, delta))
  
- all_nodes = set(range(matrix.shape[0]))
- available_nodes = list(all_nodes - set(solution))
+    all_nodes = set(range(matrix.shape[0]))
+    available_nodes = list(all_nodes - set(solution))
  
- # inter-route
- for i in range(len(solution)):
-    for j in range(min(num_replacements, len(available_nodes))):
-        neighbor = solution.copy()
-        neighbor[i] = available_nodes[j]
-        delta = calculate_delta(solution, matrix, neighbor[i], i)
-        neighbors.append((neighbor, delta))
+    # inter-route
+    for i in range(len(solution)):
+        for j in range(min(num_replacements, len(available_nodes))):
+            neighbor = solution.copy()
+            neighbor[i] = available_nodes[j]
+            delta = calculate_delta(solution, matrix, neighbor[i], i)
+            neighbors.append((neighbor, delta))
  
- return neighbors
+    return neighbors
 
 
 def steepest_2n(matrix, starting_sol):
- best_sol = starting_sol
- best_delta = 0
- neighbourhood = get_neighbourhood_2n(starting_sol, matrix)
- 
- while len(neighbourhood):
-     delta_improved = False
-     for neighbor, delta in neighbourhood:
-         if delta < best_delta:
-             best_sol = neighbor
-             best_delta = delta
-             delta_improved = True
-     if not delta_improved:
-         break
-     neighbourhood = get_neighbourhood_2n(best_sol, matrix)
-     
- return best_sol, calculate_cost(best_sol, matrix)
+    best_sol = starting_sol
+    best_delta = 0
+    neighbourhood = get_neighbourhood_2n(starting_sol, matrix)
+    
+    while len(neighbourhood):
+        deltas = np.array([delta for _, delta in neighbourhood])
+        best_index = np.argmin(deltas)
+        probably_best_sol, best_delta = neighbourhood[best_index]
+        if best_delta >= 0:
+            break
+        best_sol, best_delta = neighbourhood[best_index]
+        neighbourhood = get_neighbourhood_2n(best_sol, matrix)
+        
+    return best_sol, calculate_cost(best_sol, matrix)
 
 
 def run_steepest_2n_r_experiment(path: str):
@@ -190,6 +188,26 @@ def run_steepest_2n_r_experiment(path: str):
 
     for v in range(200):
         solutions.append(steepest_2n(matrix, random_solution(matrix)[0]))
+
+    costs = np.array([cost for sol, cost in solutions])
+    best_sol, best_cost = min(solutions, key=lambda x: x[1])
+    worst_sol, worst_cost = max(solutions, key=lambda x: x[1])
+    avg_cost = np.mean(costs)
+
+    print("Best cost: " + str(best_cost))
+    print("Worst cost: " + str(worst_cost))
+    print("Mean cost after 200 solutions: " + str(avg_cost))
+
+    show_solution(path, best_sol, title="Best Tour")
+    show_solution(path, worst_sol, title="Worst Tour")
+
+
+def run_steepest_2n_bgch_experiment(path: str):
+    matrix = get_dist_matrix(path)
+    solutions = []
+
+    for v in range(2):
+        solutions.append(steepest_2n(matrix, weighted_regret(matrix, v, 0.5)[0]))
 
     costs = np.array([cost for sol, cost in solutions])
     best_sol, best_cost = min(solutions, key=lambda x: x[1])
