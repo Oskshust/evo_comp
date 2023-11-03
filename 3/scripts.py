@@ -140,15 +140,15 @@ def calculate_delta(solution, matrix, m_id_in, s_id_out):
     return cost_in - cost_out
 
 
-def get_neighbourhood_2n(solution, matrix, num_swaps=40, num_replacements=40):
+def get_neighbourhood_2n(solution, matrix, num_replacements=40):
     neighbors = []
  
     # intra-route
-    for i in range(len(solution)):
-        for j in range(i + 1, i + num_swaps):
+    for i in range(len(solution)-1):
+        for j in range(i + 1, len(solution)):
             neighbor = solution.copy()
             neighbor[i], neighbor[(j + i) % len(solution)] = neighbor[(j + i) % len(solution)], neighbor[i]
-            delta = calculate_delta(solution, matrix, neighbor[i], (j + i) % len(solution))
+            delta = calculate_delta(solution, matrix, neighbor[i], j)
             neighbors.append((neighbor, delta))
  
     all_nodes = set(range(matrix.shape[0]))
@@ -156,10 +156,10 @@ def get_neighbourhood_2n(solution, matrix, num_swaps=40, num_replacements=40):
  
     # inter-route
     for i in range(len(solution)):
-        for j in range(min(num_replacements, len(available_nodes))):
+        for j in range(len(available_nodes)):
             neighbor = solution.copy()
             neighbor[i] = available_nodes[j]
-            delta = calculate_delta(solution, matrix, neighbor[i], i)
+            delta = calculate_delta(solution, matrix, neighbor[i], j)
             neighbors.append((neighbor, delta))
  
     return neighbors
@@ -186,7 +186,7 @@ def run_steepest_2n_r_experiment(path: str):
     matrix = get_dist_matrix(path)
     solutions = []
 
-    for v in range(200):
+    for v in range(1):
         solutions.append(steepest_2n(matrix, random_solution(matrix)[0]))
 
     costs = np.array([cost for sol, cost in solutions])
