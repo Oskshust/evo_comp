@@ -128,7 +128,7 @@ def random_solution(matrix):
     return sol, cost
 
 
-# s_id - id of vertex solution-wise, m_id - id of vertex martix-wise
+# m_id - id of vertex martix-wise, s_id - id of vertex solution-wise,
 def calculate_delta(solution, matrix, m_id_in, s_id_out):
     prev_vertex = solution[s_id_out - 1]
     next_vertex = solution[(s_id_out + 1) % len(solution)]
@@ -208,6 +208,79 @@ def run_steepest_2n_bgch_experiment(path: str):
 
     for v in range(2):
         solutions.append(steepest_2n(matrix, weighted_regret(matrix, v, 0.5)[0]))
+
+    costs = np.array([cost for sol, cost in solutions])
+    best_sol, best_cost = min(solutions, key=lambda x: x[1])
+    worst_sol, worst_cost = max(solutions, key=lambda x: x[1])
+    avg_cost = np.mean(costs)
+
+    print("Best cost: " + str(best_cost))
+    print("Worst cost: " + str(worst_cost))
+    print("Mean cost after 200 solutions: " + str(avg_cost))
+
+    show_solution(path, best_sol, title="Best Tour")
+    show_solution(path, worst_sol, title="Worst Tour")
+
+
+def get_random_neighbour_2n(solution, matrix):
+    neighbor = solution.copy()
+    all_nodes = set(range(matrix.shape[0]))
+    available_nodes = list(all_nodes - set(solution))
+
+    action = np.random.choice(['swap', 'replace'])
+
+    if action == 'swap':
+        i = np.random.choice(len(solution))
+        j = np.random.choice(len(solution))
+        neighbor[i], neighbor[j] = neighbor[j], neighbor[i]
+        delta = calculate_delta(solution, matrix, neighbor[i], j)
+    else:
+        i = np.random.choice(len(solution))
+        j = np.random.choice(len(available_nodes))
+        neighbor[i] = available_nodes[j]
+        delta = calculate_delta(solution, matrix, available_nodes[j], i)
+
+    return neighbor, delta
+
+
+def greedy_2n(matrix, starting_sol):
+   best_sol = starting_sol
+   best_delta = 0
+   probably_best_sol, best_delta = get_random_neighbour_2n(starting_sol, matrix)
+   
+   while best_delta < 0:
+       best_sol, best_delta = probably_best_sol, best_delta
+       probably_best_sol, best_delta = get_random_neighbour_2n(best_sol, matrix)
+       
+   return best_sol, calculate_cost(best_sol, matrix)
+
+
+def run_greedy_2n_r_experiment(path: str):
+    matrix = get_dist_matrix(path)
+    solutions = []
+
+    for v in range(200):
+        solutions.append(greedy_2n(matrix, random_solution(matrix)[0]))
+
+    costs = np.array([cost for sol, cost in solutions])
+    best_sol, best_cost = min(solutions, key=lambda x: x[1])
+    worst_sol, worst_cost = max(solutions, key=lambda x: x[1])
+    avg_cost = np.mean(costs)
+
+    print("Best cost: " + str(best_cost))
+    print("Worst cost: " + str(worst_cost))
+    print("Mean cost after 200 solutions: " + str(avg_cost))
+
+    show_solution(path, best_sol, title="Best Tour")
+    show_solution(path, worst_sol, title="Worst Tour")
+
+
+def run_greedy_2n_bgch_experiment(path: str):
+    matrix = get_dist_matrix(path)
+    solutions = []
+
+    for v in range(2):
+        solutions.append(greedy_2n(matrix, weighted_regret(matrix, v, 0.5)[0]))
 
     costs = np.array([cost for sol, cost in solutions])
     best_sol, best_cost = min(solutions, key=lambda x: x[1])
