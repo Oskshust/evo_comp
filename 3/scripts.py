@@ -98,26 +98,6 @@ def weighted_regret(matrix, start_v, weight):
     return cycle, current_cost
 
 
-def run_weighted_experiment(path: str):
-    matrix = get_dist_matrix(path)
-    solutions = []
-
-    for v in range(200):
-        solutions.append(weighted_regret(matrix, v, 0.5))
-
-    costs = np.array([cost for sol, cost in solutions])
-    best_sol, best_cost = min(solutions, key=lambda x: x[1])
-    worst_sol, worst_cost = max(solutions, key=lambda x: x[1])
-    avg_cost = np.mean(costs)
-
-    print("Best cost: " + str(best_cost))
-    print("Worst cost: " + str(worst_cost))
-    print("Mean cost after 200 solutions: " + str(avg_cost))
-
-    show_solution(path, best_sol, title="Best Tour")
-    show_solution(path, worst_sol, title="Worst Tour")
-
-
 def random_solution(matrix):
     n = math.ceil(matrix.shape[0] / 2)
 
@@ -140,26 +120,28 @@ def calculate_delta(solution, matrix, m_id_in, s_id_out):
     return cost_in - cost_out
 
 
-def get_neighbourhood_2n(solution, matrix, num_replacements=40):
+def get_neighbourhood_2n(solution, matrix):
     neighbors = []
+    solution_length = len(solution)
+    matrix_shape = matrix.shape[0]
  
     # intra-route
-    for i in range(len(solution)-1):
-        for j in range(i + 1, len(solution)):
-            neighbor = solution.copy()
-            neighbor[i], neighbor[(j + i) % len(solution)] = neighbor[(j + i) % len(solution)], neighbor[i]
-            delta = calculate_delta(solution, matrix, neighbor[i], j)
+    for i in range(solution_length-1):
+        for j in range(i + 1, solution_length):
+            neighbor = solution[:]
+            neighbor[i], neighbor[j] = neighbor[j], neighbor[i]
+            delta = calculate_delta(solution, matrix, neighbor[i], j) + calculate_delta(solution, matrix, neighbor[j], i)
             neighbors.append((neighbor, delta))
  
-    all_nodes = set(range(matrix.shape[0]))
-    available_nodes = list(all_nodes - set(solution))
+    all_nodes = set(range(matrix_shape))
+    available_nodes = all_nodes - set(solution)
  
     # inter-route
-    for i in range(len(solution)):
-        for j in range(len(available_nodes)):
-            neighbor = solution.copy()
-            neighbor[i] = available_nodes[j]
-            delta = calculate_delta(solution, matrix, neighbor[i], j)
+    for i in range(solution_length):
+        for node in available_nodes:
+            neighbor = solution[:]
+            neighbor[i] = node
+            delta = calculate_delta(solution, matrix, node, i)
             neighbors.append((neighbor, delta))
  
     return neighbors
