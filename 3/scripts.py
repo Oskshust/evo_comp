@@ -129,7 +129,7 @@ def calculate_delta(solution, matrix, m_id_in, s_id_out):
     cost_out = matrix[prev_vertex][solution[s_id_out]] + matrix[solution[s_id_out]][next_vertex]
 
     cost_in = matrix[prev_vertex][m_id_in] + matrix[m_id_in][next_vertex]
-    
+
     if math.isnan(cost_in - cost_out) or cost_in-cost_out==np.inf:
         return 0
 
@@ -208,12 +208,15 @@ def steepest_2n(matrix, starting_sol):
     while len(neighbourhood):
         deltas = np.array([delta for _, delta in neighbourhood])
         best_index = np.argmin(deltas)
-        best_sol, best_delta = neighbourhood[best_index]
+        probably_best_sol, best_delta = neighbourhood[best_index]
 
         if best_delta >= 0:
             break
+        
+        best_sol, best_delta = neighbourhood[best_index]
 
         neighbourhood = get_neighbourhood_2n(best_sol, matrix)
+        print(len(neighbourhood))
 
     return best_sol, calculate_cost(best_sol, matrix)
 
@@ -222,15 +225,16 @@ def steepest_2e(matrix, starting_sol):
     best_sol = starting_sol
     best_delta = 0
     neighbourhood = get_neighbourhood_2e(starting_sol, matrix)
-    
+
     while len(neighbourhood):
         deltas = np.array([delta for _, delta in neighbourhood])
         best_index = np.argmin(deltas)
-        best_sol, best_delta = neighbourhood[best_index]
+        probably_best_sol, best_delta = neighbourhood[best_index]
 
         if best_delta >= 0:
             break
-
+        
+        best_sol, best_delta = neighbourhood[best_index]
         neighbourhood = get_neighbourhood_2e(best_sol, matrix)
 
     return best_sol, calculate_cost(best_sol, matrix)
@@ -366,7 +370,7 @@ def run_steepest_2e_r_experiment(path: str):
     matrix = get_dist_matrix(path)
     solutions = []
 
-    for v in range(2):
+    for v in range(1):
         solutions.append(steepest_2e(matrix, random_solution(matrix)[0]))
 
     summarize_results(solutions, path)
