@@ -116,6 +116,9 @@ def calculate_delta(solution, matrix, m_id_in, s_id_out):
     cost_out = matrix[prev_vertex][solution[s_id_out]] + matrix[solution[s_id_out]][next_vertex]
 
     cost_in = matrix[prev_vertex][m_id_in] + matrix[m_id_in][next_vertex]
+    
+    if math.isnan(cost_in - cost_out) or cost_in-cost_out==np.inf:
+      return 0
 
     return cost_in - cost_out
 
@@ -128,18 +131,18 @@ def get_neighbourhood_2n(solution, matrix):
     # intra-route
     for i in range(solution_length-1):
         for j in range(i + 1, solution_length):
-            neighbor = solution[:]
+            neighbor = solution.copy()
             neighbor[i], neighbor[j] = neighbor[j], neighbor[i]
             delta = calculate_delta(solution, matrix, neighbor[i], j) + calculate_delta(solution, matrix, neighbor[j], i)
             neighbors.append((neighbor, delta))
  
     all_nodes = set(range(matrix_shape))
     available_nodes = all_nodes - set(solution)
- 
+
     # inter-route
     for i in range(solution_length):
         for node in available_nodes:
-            neighbor = solution[:]
+            neighbor = solution.copy()
             neighbor[i] = node
             delta = calculate_delta(solution, matrix, node, i)
             neighbors.append((neighbor, delta))
@@ -168,7 +171,7 @@ def run_steepest_2n_r_experiment(path: str):
     matrix = get_dist_matrix(path)
     solutions = []
 
-    for v in range(1):
+    for v in range(2):
         solutions.append(steepest_2n(matrix, random_solution(matrix)[0]))
 
     costs = np.array([cost for sol, cost in solutions])
@@ -202,8 +205,8 @@ def run_steepest_2n_bgch_experiment(path: str):
 
     show_solution(path, best_sol, title="Best Tour")
     show_solution(path, worst_sol, title="Worst Tour")
-
-
+    
+    
 def get_random_neighbour_2n(solution, matrix):
     neighbor = solution.copy()
     all_nodes = set(range(matrix.shape[0]))
@@ -241,7 +244,7 @@ def run_greedy_2n_r_experiment(path: str):
     matrix = get_dist_matrix(path)
     solutions = []
 
-    for v in range(200):
+    for v in range(2):
         solutions.append(greedy_2n(matrix, random_solution(matrix)[0]))
 
     costs = np.array([cost for sol, cost in solutions])
