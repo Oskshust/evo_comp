@@ -137,8 +137,12 @@ def calculate_delta(solution, matrix, m_id_in, s_id_out):
 
 
 def calculate_delta_edge(solution, matrix, start, end):
-    cost_out = matrix[solution[start - 1]][solution[start]] + matrix[solution[end]][solution[(end + 1) % len(solution)]]
-    cost_in = matrix[solution[start - 1]][solution[end]] + matrix[solution[start]][solution[(end + 1) % len(solution)]]
+    prev_vertex = solution[start - 1]
+    next_vertex = solution[(end + 1) % len(solution)]
+
+    cost_out = matrix[solution[start]][prev_vertex] + matrix[solution[end]][next_vertex]
+
+    cost_in = matrix[solution[end]][prev_vertex] + matrix[solution[start]][next_vertex]
 
     if math.isnan(cost_in - cost_out) or cost_in-cost_out==np.inf:
         return 0
@@ -181,11 +185,15 @@ def get_neighbourhood_2e(solution, matrix):
     # intra-route
     for i in range(solution_length-1):
         for j in range(i + 1, solution_length):
+            if i == 0 and j == solution_length - 1:
+                continue
+
             neighbor = np.concatenate((solution[:i], solution[i:j+1][::-1], solution[j+1:]))
 
             delta = calculate_delta_edge(solution, matrix, i, j)
             neighbors.append((neighbor, delta))
- 
+
+
     all_nodes = set(range(matrix_shape))
     available_nodes = all_nodes - set(solution)
 
@@ -216,13 +224,12 @@ def steepest_2n(matrix, starting_sol):
         best_sol, best_delta = neighbourhood[best_index]
 
         neighbourhood = get_neighbourhood_2n(best_sol, matrix)
-        print(len(neighbourhood))
 
     return best_sol, calculate_cost(best_sol, matrix)
 
 
 def steepest_2e(matrix, starting_sol):
-    best_sol = starting_sol
+    best_sol = np.array(starting_sol)
     best_delta = 0
     neighbourhood = get_neighbourhood_2e(starting_sol, matrix)
 
@@ -330,7 +337,7 @@ def run_steepest_2n_r_experiment(path: str):
     matrix = get_dist_matrix(path)
     solutions = []
 
-    for v in range(2):
+    for v in range(200):
         solutions.append(steepest_2n(matrix, random_solution(matrix)[0]))
 
     summarize_results(solutions, path)
@@ -370,7 +377,7 @@ def run_steepest_2e_r_experiment(path: str):
     matrix = get_dist_matrix(path)
     solutions = []
 
-    for v in range(1):
+    for v in range(200):
         solutions.append(steepest_2e(matrix, random_solution(matrix)[0]))
 
     summarize_results(solutions, path)
