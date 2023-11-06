@@ -4,6 +4,19 @@ import math
 import matplotlib.pyplot as plt
 
 
+def summarize_results(solutions, path):
+    costs = np.array([cost for sol, cost in solutions])
+    best_sol, best_cost = min(solutions, key=lambda x: x[1])
+    worst_sol, worst_cost = max(solutions, key=lambda x: x[1])
+    avg_cost = np.mean(costs)
+
+    print("Best cost: " + str(best_cost))
+    print("Worst cost: " + str(worst_cost))
+    print("Mean cost after 200 solutions: " + str(avg_cost))
+
+    show_solution(path, best_sol, title="Best Tour")
+
+
 def get_coords_n_costs(path: str):
     with open(path, 'r') as f:
         reader = csv.reader(f, delimiter=';')
@@ -32,7 +45,7 @@ def calculate_cost(solution, matrix):
 
 def show_solution(path, solution, title):
     coords, node_costs = get_coords_n_costs(path)
-    plt.figure(figsize=(10, 10))
+    # plt.figure(figsize=(10, 10))
     plt.scatter(coords[:, 0], coords[:, 1], c=node_costs, cmap='plasma')
 
     best_tour_coords = np.append(solution, solution[0])
@@ -116,9 +129,23 @@ def calculate_delta(solution, matrix, m_id_in, s_id_out):
     cost_out = matrix[prev_vertex][solution[s_id_out]] + matrix[solution[s_id_out]][next_vertex]
 
     cost_in = matrix[prev_vertex][m_id_in] + matrix[m_id_in][next_vertex]
-    
+
     if math.isnan(cost_in - cost_out) or cost_in-cost_out==np.inf:
-      return 0
+        return 0
+
+    return cost_in - cost_out
+
+
+def calculate_delta_edge(solution, matrix, start, end):
+    prev_vertex = solution[start - 1]
+    next_vertex = solution[(end + 1) % len(solution)]
+
+    cost_out = matrix[solution[start]][prev_vertex] + matrix[solution[end]][next_vertex]
+
+    cost_in = matrix[solution[end]][prev_vertex] + matrix[solution[start]][next_vertex]
+
+    if math.isnan(cost_in - cost_out) or cost_in-cost_out==np.inf:
+        return 0
 
     return cost_in - cost_out
 
@@ -127,7 +154,7 @@ def get_neighbourhood_2n(solution, matrix):
     neighbors = []
     solution_length = len(solution)
     matrix_shape = matrix.shape[0]
- 
+
     # intra-route
     for i in range(solution_length-1):
         for j in range(i + 1, solution_length):
@@ -146,7 +173,38 @@ def get_neighbourhood_2n(solution, matrix):
             neighbor[i] = node
             delta = calculate_delta(solution, matrix, node, i)
             neighbors.append((neighbor, delta))
- 
+
+    return neighbors
+
+
+def get_neighbourhood_2e(solution, matrix):
+    neighbors = []
+    solution_length = len(solution)
+    matrix_shape = matrix.shape[0]
+
+    # intra-route
+    for i in range(solution_length-1):
+        for j in range(i + 1, solution_length):
+            if i == 0 and j == solution_length - 1:
+                continue
+
+            neighbor = np.concatenate((solution[:i], solution[i:j+1][::-1], solution[j+1:]))
+
+            delta = calculate_delta_edge(solution, matrix, i, j)
+            neighbors.append((neighbor, delta))
+
+
+    all_nodes = set(range(matrix_shape))
+    available_nodes = all_nodes - set(solution)
+
+    # inter-route
+    for i in range(solution_length):
+        for node in available_nodes:
+            neighbor = solution.copy()
+            neighbor[i] = node
+            delta = calculate_delta(solution, matrix, node, i)
+            neighbors.append((neighbor, delta))
+
     return neighbors
 
 
@@ -154,59 +212,41 @@ def steepest_2n(matrix, starting_sol):
     best_sol = starting_sol
     best_delta = 0
     neighbourhood = get_neighbourhood_2n(starting_sol, matrix)
-    
+
     while len(neighbourhood):
         deltas = np.array([delta for _, delta in neighbourhood])
         best_index = np.argmin(deltas)
         probably_best_sol, best_delta = neighbourhood[best_index]
+
         if best_delta >= 0:
             break
-        best_sol, best_delta = neighbourhood[best_index]
-        neighbourhood = get_neighbourhood_2n(best_sol, matrix)
         
+        best_sol, best_delta = neighbourhood[best_index]
+
+        neighbourhood = get_neighbourhood_2n(best_sol, matrix)
+
     return best_sol, calculate_cost(best_sol, matrix)
 
 
-def run_steepest_2n_r_experiment(path: str):
-    matrix = get_dist_matrix(path)
-    solutions = []
+def steepest_2e(matrix, starting_sol):
+    best_sol = np.array(starting_sol)
+    best_delta = 0
+    neighbourhood = get_neighbourhood_2e(starting_sol, matrix)
 
-    for v in range(2):
-        solutions.append(steepest_2n(matrix, random_solution(matrix)[0]))
+    while len(neighbourhood):
+        deltas = np.array([delta for _, delta in neighbourhood])
+        best_index = np.argmin(deltas)
+        probably_best_sol, best_delta = neighbourhood[best_index]
 
-    costs = np.array([cost for sol, cost in solutions])
-    best_sol, best_cost = min(solutions, key=lambda x: x[1])
-    worst_sol, worst_cost = max(solutions, key=lambda x: x[1])
-    avg_cost = np.mean(costs)
+        if best_delta >= 0:
+            break
+        
+        best_sol, best_delta = neighbourhood[best_index]
+        neighbourhood = get_neighbourhood_2e(best_sol, matrix)
 
-    print("Best cost: " + str(best_cost))
-    print("Worst cost: " + str(worst_cost))
-    print("Mean cost after 200 solutions: " + str(avg_cost))
-
-    show_solution(path, best_sol, title="Best Tour")
-    show_solution(path, worst_sol, title="Worst Tour")
+    return best_sol, calculate_cost(best_sol, matrix)
 
 
-def run_steepest_2n_bgch_experiment(path: str):
-    matrix = get_dist_matrix(path)
-    solutions = []
-
-    for v in range(2):
-        solutions.append(steepest_2n(matrix, weighted_regret(matrix, v, 0.5)[0]))
-
-    costs = np.array([cost for sol, cost in solutions])
-    best_sol, best_cost = min(solutions, key=lambda x: x[1])
-    worst_sol, worst_cost = max(solutions, key=lambda x: x[1])
-    avg_cost = np.mean(costs)
-
-    print("Best cost: " + str(best_cost))
-    print("Worst cost: " + str(worst_cost))
-    print("Mean cost after 200 solutions: " + str(avg_cost))
-
-    show_solution(path, best_sol, title="Best Tour")
-    show_solution(path, worst_sol, title="Worst Tour")
-    
-    
 def get_random_neighbour_2n(solution, matrix):
     neighbor = solution.copy()
     all_nodes = set(range(matrix.shape[0]))
@@ -215,10 +255,31 @@ def get_random_neighbour_2n(solution, matrix):
     action = np.random.choice(['swap', 'replace'])
 
     if action == 'swap':
-        i = np.random.choice(len(solution))
-        j = np.random.choice(len(solution))
+        i, j = np.random.choice(len(solution), size=2, replace=False)
         neighbor[i], neighbor[j] = neighbor[j], neighbor[i]
-        delta = calculate_delta(solution, matrix, neighbor[i], j)
+        delta = calculate_delta(solution, matrix, neighbor[i], j) + calculate_delta(solution, matrix, neighbor[j], i)
+    else:
+        i = np.random.choice(len(solution))
+        j = np.random.choice(len(available_nodes))
+        neighbor[i] = available_nodes[j]
+        delta = calculate_delta(solution, matrix, available_nodes[j], i)
+
+    return neighbor, delta
+
+
+def get_random_neighbour_2e(solution, matrix):
+    neighbor = solution.copy()
+    all_nodes = set(range(matrix.shape[0]))
+    available_nodes = list(all_nodes - set(solution))
+
+    action = np.random.choice(['swap', 'replace'])
+
+    if action == 'swap':
+        i, j = np.random.choice(len(solution), size=2, replace=False)
+
+        neighbor = np.concatenate((solution[:i], solution[i:j+1][::-1], solution[j+1:]))
+        delta = calculate_delta_edge(solution, matrix, i, j)
+
     else:
         i = np.random.choice(len(solution))
         j = np.random.choice(len(available_nodes))
@@ -240,41 +301,93 @@ def greedy_2n(matrix, starting_sol):
    return best_sol, calculate_cost(best_sol, matrix)
 
 
+def greedy_2e(matrix, starting_sol):
+   best_sol = starting_sol
+   best_delta = 0
+   probably_best_sol, best_delta = get_random_neighbour_2e(starting_sol, matrix)
+   
+   while best_delta < 0:
+       best_sol, best_delta = probably_best_sol, best_delta
+       probably_best_sol, best_delta = get_random_neighbour_2e(best_sol, matrix)
+       
+   return best_sol, calculate_cost(best_sol, matrix)
+
+
 def run_greedy_2n_r_experiment(path: str):
     matrix = get_dist_matrix(path)
     solutions = []
 
-    for v in range(2):
+    for v in range(200):
         solutions.append(greedy_2n(matrix, random_solution(matrix)[0]))
 
-    costs = np.array([cost for sol, cost in solutions])
-    best_sol, best_cost = min(solutions, key=lambda x: x[1])
-    worst_sol, worst_cost = max(solutions, key=lambda x: x[1])
-    avg_cost = np.mean(costs)
-
-    print("Best cost: " + str(best_cost))
-    print("Worst cost: " + str(worst_cost))
-    print("Mean cost after 200 solutions: " + str(avg_cost))
-
-    show_solution(path, best_sol, title="Best Tour")
-    show_solution(path, worst_sol, title="Worst Tour")
+    summarize_results(solutions, path)
 
 
 def run_greedy_2n_bgch_experiment(path: str):
     matrix = get_dist_matrix(path)
     solutions = []
 
-    for v in range(2):
+    for v in range(200):
         solutions.append(greedy_2n(matrix, weighted_regret(matrix, v, 0.5)[0]))
 
-    costs = np.array([cost for sol, cost in solutions])
-    best_sol, best_cost = min(solutions, key=lambda x: x[1])
-    worst_sol, worst_cost = max(solutions, key=lambda x: x[1])
-    avg_cost = np.mean(costs)
+    summarize_results(solutions, path)
 
-    print("Best cost: " + str(best_cost))
-    print("Worst cost: " + str(worst_cost))
-    print("Mean cost after 200 solutions: " + str(avg_cost))
 
-    show_solution(path, best_sol, title="Best Tour")
-    show_solution(path, worst_sol, title="Worst Tour")
+def run_steepest_2n_r_experiment(path: str):
+    matrix = get_dist_matrix(path)
+    solutions = []
+
+    for v in range(200):
+        solutions.append(steepest_2n(matrix, random_solution(matrix)[0]))
+
+    summarize_results(solutions, path)
+
+
+def run_steepest_2n_bgch_experiment(path: str):
+    matrix = get_dist_matrix(path)
+    solutions = []
+
+    for v in range(200):
+        solutions.append(steepest_2n(matrix, weighted_regret(matrix, v, 0.5)[0]))
+
+    summarize_results(solutions, path)
+
+
+def run_greedy_2e_r_experiment(path: str):
+    matrix = get_dist_matrix(path)
+    solutions = []
+
+    for v in range(200):
+        solutions.append(greedy_2e(matrix, random_solution(matrix)[0]))
+
+    summarize_results(solutions, path)
+
+
+def run_greedy_2e_bgch_experiment(path: str):
+    matrix = get_dist_matrix(path)
+    solutions = []
+
+    for v in range(200):
+        solutions.append(greedy_2e(matrix, weighted_regret(matrix, v, 0.5)[0]))
+
+    summarize_results(solutions, path)
+
+
+def run_steepest_2e_r_experiment(path: str):
+    matrix = get_dist_matrix(path)
+    solutions = []
+
+    for v in range(200):
+        solutions.append(steepest_2e(matrix, random_solution(matrix)[0]))
+
+    summarize_results(solutions, path)
+
+
+def run_steepest_2e_bgch_experiment(path: str):
+    matrix = get_dist_matrix(path)
+    solutions = []
+
+    for v in range(200):
+        solutions.append(steepest_2e(matrix, weighted_regret(matrix, v, 0.5)[0]))
+
+    summarize_results(solutions, path)
