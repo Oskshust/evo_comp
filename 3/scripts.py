@@ -247,77 +247,51 @@ def steepest_2e(matrix, starting_sol):
     return best_sol, calculate_cost(best_sol, matrix)
 
 
-def get_random_neighbour_2n(solution, matrix):
-    neighbor = solution.copy()
-    all_nodes = set(range(matrix.shape[0]))
-    available_nodes = list(all_nodes - set(solution))
-
-    action = np.random.choice(['swap', 'replace'])
-
-    if action == 'swap':
-        i, j = np.random.choice(len(solution), size=2, replace=False)
-        neighbor[i], neighbor[j] = neighbor[j], neighbor[i]
-        delta = calculate_delta(solution, matrix, neighbor[i], j) + calculate_delta(solution, matrix, neighbor[j], i)
-    else:
-        i = np.random.choice(len(solution))
-        j = np.random.choice(len(available_nodes))
-        neighbor[i] = available_nodes[j]
-        delta = calculate_delta(solution, matrix, available_nodes[j], i)
-
-    return neighbor, delta
-
-
-def get_random_neighbour_2e(solution, matrix):
-    neighbor = solution.copy()
-    all_nodes = set(range(matrix.shape[0]))
-    available_nodes = list(all_nodes - set(solution))
-
-    action = np.random.choice(['swap', 'replace'])
-
-    if action == 'swap':
-        i, j = np.random.choice(len(solution), size=2, replace=False)
-
-        neighbor = np.concatenate((solution[:i], solution[i:j+1][::-1], solution[j+1:]))
-        delta = calculate_delta_edge(solution, matrix, i, j)
-
-    else:
-        i = np.random.choice(len(solution))
-        j = np.random.choice(len(available_nodes))
-        neighbor[i] = available_nodes[j]
-        delta = calculate_delta(solution, matrix, available_nodes[j], i)
-
-    return neighbor, delta
-
 
 def greedy_2n(matrix, starting_sol):
-   best_sol = starting_sol
-   best_delta = 0
-   probably_best_sol, best_delta = get_random_neighbour_2n(starting_sol, matrix)
-   
-   while best_delta < 0:
-       best_sol, best_delta = probably_best_sol, best_delta
-       probably_best_sol, best_delta = get_random_neighbour_2n(best_sol, matrix)
-       
-   return best_sol, calculate_cost(best_sol, matrix)
+    best_sol = starting_sol
+    best_delta = 0
+    neighbourhood = get_neighbourhood_2n(starting_sol, matrix)
+    np.random.shuffle(neighbourhood)
+    i = 0
+    while i < len(neighbourhood):
+        probably_best_sol, best_delta = neighbourhood[i]
+        if best_delta >= 0:
+            i += 1
+        else:
+            best_sol, best_delta = neighbourhood[i]
+            neighbourhood = get_neighbourhood_2n(best_sol, matrix)
+            np.random.shuffle(neighbourhood)
+            i = 0
+
+    return best_sol, calculate_cost(best_sol, matrix)
 
 
 def greedy_2e(matrix, starting_sol):
-   best_sol = starting_sol
-   best_delta = 0
-   probably_best_sol, best_delta = get_random_neighbour_2e(starting_sol, matrix)
-   
-   while best_delta < 0:
-       best_sol, best_delta = probably_best_sol, best_delta
-       probably_best_sol, best_delta = get_random_neighbour_2e(best_sol, matrix)
-       
-   return best_sol, calculate_cost(best_sol, matrix)
+    best_sol = starting_sol
+    best_delta = 0
+    neighbourhood = get_neighbourhood_2e(starting_sol, matrix)
+    np.random.shuffle(neighbourhood)
+
+    i = 0
+    while i < len(neighbourhood):
+        probably_best_sol, best_delta = neighbourhood[i]
+        if best_delta >= 0:
+            i += 1
+        else:
+            best_sol, best_delta = neighbourhood[i]
+            neighbourhood = get_neighbourhood_2e(best_sol, matrix)
+            np.random.shuffle(neighbourhood)
+            i = 0
+
+    return best_sol, calculate_cost(best_sol, matrix)
 
 
 def run_greedy_2n_r_experiment(path: str):
     matrix = get_dist_matrix(path)
     solutions = []
 
-    for v in range(200):
+    for v in range(2):
         solutions.append(greedy_2n(matrix, random_solution(matrix)[0]))
 
     summarize_results(solutions, path)
@@ -357,7 +331,7 @@ def run_greedy_2e_r_experiment(path: str):
     matrix = get_dist_matrix(path)
     solutions = []
 
-    for v in range(200):
+    for v in range(2):
         solutions.append(greedy_2e(matrix, random_solution(matrix)[0]))
 
     summarize_results(solutions, path)
