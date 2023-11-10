@@ -1,4 +1,5 @@
 import numpy as np
+import time
 
 from common import *
 
@@ -106,12 +107,17 @@ def run_experiment(path: str, n_iterations=200, n_candidates=10):
 
     candidates = calculate_n_candidates(matrix, n_candidates)
 
+    start = time.time()
+
     for _ in range(n_iterations):
         starting_solution = random_solution(matrix)[0]
         solution = steepest(matrix, starting_solution, candidates)
         solutions.append(solution)
 
+    end = time.time()
+
     summarize_results(solutions, path)
+    print(f"Time per iteration: {(end - start)/n_iterations} s")
 
 
 def run_baseline(path: str, n_iterations=200):
