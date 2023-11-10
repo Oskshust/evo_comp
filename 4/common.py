@@ -23,7 +23,6 @@ def calculate_delta_edge(solution, matrix, start, end):
     next_vertex = solution[(end + 1) % len(solution)]
 
     cost_out = matrix[solution[start]][prev_vertex] + matrix[solution[end]][next_vertex]
-
     cost_in = matrix[solution[end]][prev_vertex] + matrix[solution[start]][next_vertex]
 
     if math.isnan(cost_in - cost_out) or cost_in-cost_out==np.inf:

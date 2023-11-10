@@ -36,7 +36,7 @@ def get_whole_neighborhood(solution, matrix):
     neighbors = []
 
     # intra
-    for i in range(solution_length-1):
+    for i in range(solution_length - 1):
         for j in range(i + 1, solution_length):
             neighbors.append(exchange_edges(solution, matrix, i, j))
 
@@ -45,14 +45,18 @@ def get_whole_neighborhood(solution, matrix):
 
     # inter
     for i in range(solution_length):
-        for node in available_nodes:            
+        for node in available_nodes:
             neighbors.append(insert_node(solution, matrix, node, i))
 
     return neighbors
 
 
 def exchange_edges(solution, matrix, move_start, move_end):
-    neighbor = np.concatenate((solution[:move_start], solution[move_start:move_end+1][::-1], solution[move_end+1:]))
+    if move_start > move_end:
+        neighbor = np.concatenate((solution[move_start:][::-1], solution[move_end+1:move_start], solution[:move_end+1][::-1]))
+    else:
+        neighbor = np.concatenate((solution[:move_start], solution[move_start:move_end+1][::-1], solution[move_end+1:]))
+    
     delta = calculate_delta_edge(solution, matrix, move_start, move_end)
 
     return neighbor, delta
