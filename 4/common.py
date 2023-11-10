@@ -4,13 +4,18 @@ import csv
 import math
 
 
-def calculate_delta(solution, matrix, m_id_in, s_id_out):
-    prev_vertex = solution[s_id_out - 1]
-    next_vertex = solution[(s_id_out + 1) % len(solution)]
+def calculate_delta_node(solution, matrix, new_node, insert_position, node_swap):
+    prev_vertex = solution[insert_position - 1]
+    next_vertex = solution[(insert_position + 1) % len(solution)]
 
-    cost_out = matrix[prev_vertex][solution[s_id_out]] + matrix[solution[s_id_out]][next_vertex]
-
-    cost_in = matrix[prev_vertex][m_id_in] + matrix[m_id_in][next_vertex]
+    cost_out = matrix[prev_vertex][solution[insert_position]] + matrix[solution[insert_position]][next_vertex]
+    
+    if not node_swap:
+        next_next_vertex = solution[(insert_position + 2) % len(solution)]
+        cost_out += matrix[next_vertex][next_next_vertex]
+        cost_in = matrix[prev_vertex][next_vertex] + matrix[next_vertex][new_node] + matrix[new_node][next_next_vertex]
+    else:
+        cost_in = matrix[prev_vertex][new_node] + matrix[new_node][next_vertex]
 
     if math.isnan(cost_in - cost_out) or cost_in-cost_out==np.inf:
         return 0

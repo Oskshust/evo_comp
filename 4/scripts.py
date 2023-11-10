@@ -63,10 +63,16 @@ def exchange_edges(solution, matrix, move_start, move_end):
     return neighbor, delta
 
 
-def insert_node(solution, matrix, new_node, insert_id):
+def insert_node(solution, matrix, new_node, insert_id, node_swap=True):
     neighbor = solution.copy()
-    neighbor[insert_id] = new_node
-    delta = calculate_delta(solution, matrix, new_node, insert_id)
+
+    if node_swap:
+        neighbor[insert_id] = new_node
+    else:
+        neighbor[insert_id] = neighbor[insert_id + 1]
+        neighbor[insert_id + 1] = new_node
+
+    delta = calculate_delta_node(solution, matrix, new_node, insert_id, node_swap)
 
     return neighbor, delta
 
@@ -77,7 +83,8 @@ def get_candidate_neighborhood(solution, matrix, candidates):
     for n1_i, n1 in enumerate(solution):
         node_candidates = candidates[n1]
         next_i = (n1_i + 1) % len(solution)
-
+        prev_i = n1_i - 1
+        
         for n2 in node_candidates:
             where_n2 = np.where(solution == n2)[0]
             n2_in_solution = len(where_n2) != 0
@@ -89,6 +96,7 @@ def get_candidate_neighborhood(solution, matrix, candidates):
                 neighbors.append(exchange_edges(solution, matrix, n1_i, n2_i - 1))
             else:
                 neighbors.append(insert_node(solution, matrix, n2, next_i))
+                neighbors.append(insert_node(solution, matrix, n2, prev_i, node_swap=False))
     
     return neighbors
 
