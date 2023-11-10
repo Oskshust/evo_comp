@@ -116,8 +116,8 @@ def run_experiment(path: str, n_iterations=200, n_candidates=10):
 
     end = time.time()
 
-    summarize_results(solutions, path)
     print(f"Time per iteration: {(end - start)/n_iterations} s")
+    summarize_results(solutions, path)
 
 
 def run_baseline(path: str, n_iterations=200):

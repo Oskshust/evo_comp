@@ -37,7 +37,7 @@ def summarize_results(solutions, path):
     worst_sol, worst_cost = max(solutions, key=lambda x: x[1])
     avg_cost = np.mean(costs)
 
-    print(f"{round(avg_cost, 3)}({best_cost} - {worst_cost})")
+    print(f"Results: {round(avg_cost, 3)}({int(best_cost)} - {int(worst_cost)})")
     print(f"Best solution: {sorted(list(best_sol))}")
 
     show_solution(path, best_sol, title="Best Tour")
