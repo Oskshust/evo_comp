@@ -4,61 +4,53 @@ import csv
 import math
 
 
-def exchange_edges(solution, matrix, move_start, move_end):
+def exchange_edges(solution, move_start, move_end):
     if move_start > move_end:
         neighbor = np.concatenate((solution[move_start:][::-1], solution[move_end+1:move_start], solution[:move_end+1][::-1]))
     else:
         neighbor = np.concatenate((solution[:move_start], solution[move_start:move_end+1][::-1], solution[move_end+1:]))
     
-    delta = calculate_delta_edge(solution, matrix, move_start, move_end)
-
-    return neighbor, delta
+    return neighbor
 
 
-def insert_node(solution, matrix, new_node, insert_id, node_swap=True):
+def insert_node(solution, new_node, insert_id):
     neighbor = solution.copy()
 
-    if node_swap:
-        neighbor[insert_id] = new_node
-    else:
-        neighbor[insert_id] = neighbor[insert_id + 1]
-        neighbor[insert_id + 1] = new_node
+    neighbor[insert_id] = new_node
 
-    delta = calculate_delta_node(solution, matrix, new_node, insert_id, node_swap)
-
-    return neighbor, delta
+    return neighbor
 
 
-def calculate_delta_node(solution, matrix, new_node, insert_position, node_swap):
+def calculate_delta_node(solution, matrix, new_node, insert_position):
     prev_vertex = solution[insert_position - 1]
     next_vertex = solution[(insert_position + 1) % len(solution)]
 
-    cost_out = matrix[prev_vertex][solution[insert_position]] + matrix[solution[insert_position]][next_vertex]
-    
-    if not node_swap:
-        next_next_vertex = solution[(insert_position + 2) % len(solution)]
-        cost_out += matrix[next_vertex][next_next_vertex]
-        cost_in = matrix[prev_vertex][next_vertex] + matrix[next_vertex][new_node] + matrix[new_node][next_next_vertex]
-    else:
-        cost_in = matrix[prev_vertex][new_node] + matrix[new_node][next_vertex]
+    removed_edges = ((prev_vertex, solution[insert_position]), (solution[insert_position], next_vertex))
+    added_edges = ((prev_vertex, new_node), (new_node, next_vertex))
 
-    if math.isnan(cost_in - cost_out) or cost_in-cost_out==np.inf:
-        return 0
+    cost_out = sum(matrix[e1][e2] for e1, e2 in removed_edges)
+    cost_in = sum(matrix[e1][e2] for e1, e2 in added_edges)
 
-    return cost_in - cost_out
+    if math.isnan(cost_in - cost_out) or cost_in - cost_out == np.inf or cost_in - cost_out == -np.inf:
+        return 0, removed_edges
+
+    return cost_in - cost_out, removed_edges
 
 
 def calculate_delta_edge(solution, matrix, start, end):
     prev_vertex = solution[start - 1]
     next_vertex = solution[(end + 1) % len(solution)]
 
-    cost_out = matrix[solution[start]][prev_vertex] + matrix[solution[end]][next_vertex]
-    cost_in = matrix[solution[end]][prev_vertex] + matrix[solution[start]][next_vertex]
+    removed_edges = ((solution[start], prev_vertex), (solution[end], next_vertex))
+    added_edges = ((solution[end], prev_vertex), (solution[start], next_vertex))
+
+    cost_out = sum(matrix[e1][e2] for e1, e2 in removed_edges)
+    cost_in = sum(matrix[e1][e2] for e1, e2 in added_edges)
 
     if math.isnan(cost_in - cost_out) or cost_in-cost_out==np.inf:
-        return 0
+        return 0, removed_edges
 
-    return cost_in - cost_out
+    return cost_in - cost_out, removed_edges
 
 
 def summarize_results(solutions, path):
