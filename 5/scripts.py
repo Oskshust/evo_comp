@@ -46,6 +46,7 @@ def get_neighborhood(solution, matrix, only_improving, previous_neighbors = None
 
     return neighbors
 
+
 def update_delta(new_solution, matrix, old_move):
     if old_move[0] == "edge":
         new_delta, _ = calculate_delta_edge(new_solution, matrix, old_move[2], old_move[3])
@@ -53,6 +54,7 @@ def update_delta(new_solution, matrix, old_move):
         new_delta, _ = calculate_delta_node(new_solution, matrix, old_move[2], old_move[3])
 
     return new_delta
+
 
 def steepest(matrix, use_previous_deltas):
     starting_sol = random_solution(matrix)[0]
