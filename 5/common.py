@@ -41,11 +41,11 @@ def calculate_delta_edge(solution, matrix, start, end):
     prev_vertex = solution[start - 1]
     next_vertex = solution[(end + 1) % len(solution)]
 
-    removed_edges = ((solution[start], prev_vertex), (solution[end], next_vertex))
-    added_edges = ((solution[end], prev_vertex), (solution[start], next_vertex))
+    removed_edges = ((prev_vertex, solution[start]), (solution[end], next_vertex))
+    added_edges = ((prev_vertex, solution[end]), (solution[start], next_vertex))
 
-    cost_out = sum(matrix[e1][e2] for e1, e2 in removed_edges)
-    cost_in = sum(matrix[e1][e2] for e1, e2 in added_edges)
+    cost_out = sum(matrix[e2][e1] for e1, e2 in removed_edges)
+    cost_in = sum(matrix[e2][e1] for e1, e2 in added_edges)
 
     if math.isnan(cost_in - cost_out) or cost_in-cost_out==np.inf:
         return 0, removed_edges
