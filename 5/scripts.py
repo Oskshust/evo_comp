@@ -4,17 +4,10 @@ import time
 from common import *
 
 
-def get_neighborhood(solution, matrix, only_improving, previous_neighbors = None):
+def get_neighborhood(solution, matrix, only_improving):
     solution_length = len(solution)
 
     neighbors = []
-    if previous_neighbors != None:
-        for move, _ in previous_neighbors:
-            new_delta = update_delta(solution, matrix, move)
-            if new_delta < 0:
-                neighbors.append((move, new_delta))
-
-    old_moves = {move for move, _ in neighbors}
 
     # intra
     for i in range(solution_length - 1):
@@ -23,9 +16,7 @@ def get_neighborhood(solution, matrix, only_improving, previous_neighbors = None
 
             if not only_improving or delta < 0:
                 move = ("edge", removed_edges, i, j)
-                
-                if move not in old_moves:
-                    neighbors.append((move, delta))
+                neighbors.append((move, delta))
 
     all_nodes = set(range(len(matrix)))
     available_nodes = all_nodes - set(solution)
@@ -37,12 +28,10 @@ def get_neighborhood(solution, matrix, only_improving, previous_neighbors = None
 
             if not only_improving or delta < 0:
                 move = ("node", removed_edges, node, i)
-                
-                if move not in old_moves:
-                    neighbors.append((move, delta))
+                neighbors.append((move, delta))
 
     if only_improving:
-        neighbors = sorted(neighbors, key=lambda x: x[1])
+        return sorted(neighbors, key=lambda x: x[1])
 
     return neighbors
 
@@ -51,11 +40,6 @@ def get_neighborhood_new(solution, matrix, previous_neighbors, moves_to_recalc):
     solution_length = len(solution)
 
     neighbors = [nb for nb in previous_neighbors]
-    # if previous_neighbors != None:
-    #     for move, _ in previous_neighbors:
-    #         new_delta = update_delta(solution, matrix, move)
-    #         if new_delta < 0:
-    #             neighbors.append((move, new_delta))
 
     old_moves = {move for move, _ in neighbors}
 
