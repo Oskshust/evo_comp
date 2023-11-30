@@ -47,6 +47,47 @@ def get_neighborhood(solution, matrix, only_improving, previous_neighbors = None
     return neighbors
 
 
+def get_neighborhood_new(solution, matrix, previous_neighbors, moves_to_recalc):
+    solution_length = len(solution)
+
+    neighbors = [nb for nb in previous_neighbors]
+    # if previous_neighbors != None:
+    #     for move, _ in previous_neighbors:
+    #         new_delta = update_delta(solution, matrix, move)
+    #         if new_delta < 0:
+    #             neighbors.append((move, new_delta))
+
+    old_moves = {move for move, _ in neighbors}
+
+    # intra
+    for rec in moves_to_recalc:
+        if rec[0] == "edge":
+            for j in range(rec[1] + 1, solution_length):
+                delta, removed_edges = calculate_delta_edge(solution, matrix, rec[1], j)
+
+                if delta < 0:
+                    move = ("edge", removed_edges, rec[1], j)
+                    
+                    if move not in old_moves:
+                        neighbors.append((move, delta))
+
+        else:
+            all_nodes = set(range(len(matrix)))
+            available_nodes = all_nodes - set(solution)
+
+            # inter
+            for node in available_nodes:
+                delta, removed_edges = calculate_delta_node(solution, matrix, node, rec[1])
+
+                if delta < 0:
+                    move = ("node", removed_edges, node, rec[1])
+                    
+                    if move not in old_moves:
+                        neighbors.append((move, delta))
+
+    return sorted(neighbors, key=lambda x: x[1])
+
+
 def update_delta(new_solution, matrix, old_move):
     if old_move[0] == "edge":
         new_delta, _ = calculate_delta_edge(new_solution, matrix, old_move[2], old_move[3])
@@ -74,6 +115,8 @@ def steepest(matrix, use_previous_deltas):
             best_move_found = False
             best_delta = None
 
+            moves_to_recalc = set()
+
             for move, delta in neighbourhood:
                 removed_edges = move[1]
 
@@ -84,15 +127,15 @@ def steepest(matrix, use_previous_deltas):
                 should_move_be_removed = False
 
                 if move[0] == "node" and move[2] in best_sol:
+                    moves_to_recalc.add(("node", move[3]))
                     should_move_be_removed = True
                 elif all(e in solution_edges for e in removed_edges) or all(e in solution_edges_reversed for e in removed_edges):
                     best_move = move
                     best_move_found = True
                     should_move_be_removed = True
+                    moves_to_recalc.add(("edge", move[2]))
+                    moves_to_recalc.add(("edge", move[3]))
                     # print(f"found best move, delta {delta}")
-
-                elif any(e not in solution_edges or e not in solution_edges_reversed for e in removed_edges):
-                    should_move_be_removed = True
 
                 if not should_move_be_removed:
                     leftover_moves.append((move, delta))
@@ -106,8 +149,7 @@ def steepest(matrix, use_previous_deltas):
             else:
                 best_sol = insert_node(best_sol, best_move[2], best_move[3])
                 # assert len(set(best_sol)) == len(best_sol), "node"
-            
-            neighbourhood = get_neighborhood(best_sol, matrix, True, leftover_moves)
+            neighbourhood = get_neighborhood_new(best_sol, matrix, leftover_moves, moves_to_recalc)
             # print(f"new best sol - {calculate_cost(best_sol, matrix)}")
     else:
         while len(neighbourhood):
