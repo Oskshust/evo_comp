@@ -16,8 +16,7 @@ def get_neighborhood(solution, matrix):
     return neighbors
 
 
-def steepest(matrix):
-    starting_sol = random_solution(matrix)
+def steepest(matrix, starting_sol):
     best_sol = np.array(starting_sol)
     best_delta = 0
 
@@ -51,7 +50,7 @@ def run_experiment(path: str, n_iterations=200, n_runs=20):
         start = time.time()
 
         for _ in range(n_iterations):
-            solution = steepest(matrix)
+            solution = steepest(matrix, random_solution(matrix))
             solutions.append(solution)
 
         end = time.time()
@@ -60,6 +59,52 @@ def run_experiment(path: str, n_iterations=200, n_runs=20):
         avg_times.append(avg_time)
 
         best_solution = min(solutions, key=lambda x: x[1])
+        best_solutions.append(best_solution)
+
+    print(f"Average time per iteration: {np.mean(avg_times)} s")
+    summarize_results(best_solutions, path)
+
+
+def perturb(solution):
+    node_indices = np.sort(np.random.choice(len(solution), 2, replace=False))
+
+    new_solution = solution.copy()
+    np.random.shuffle(new_solution[node_indices[0]:node_indices[1]])
+
+    return new_solution
+
+
+def ils(matrix, start_time, time_limit):    
+    y, cost = steepest(matrix, random_solution(matrix))
+    best_solution, best_cost = y, cost
+
+    while time.time() - start_time < time_limit:
+        x = perturb(y)
+        y, y_cost = steepest(matrix, x)
+        if y_cost < best_cost:
+            best_solution, best_cost = y, y_cost
+
+    return best_solution, best_cost
+
+
+# avg of 4 MSLS exps -> 7.2s/iteration -> 7.2s/i * 200i = 1440s -> 1440s-7s (starting iteration) = 1433s   
+def run_ils(path: str, n_iterations=200, n_runs=20):
+    max_time_per_run = n_iterations * 7.2 - 7.2
+    matrix = get_dist_matrix(path)
+
+    best_solutions = []
+    avg_times = []
+
+    for _ in range(n_runs):
+        start = time.time()
+
+        best_solution = ils(matrix, start, max_time_per_run)
+
+        end = time.time()
+        
+        avg_time = (end - start) / n_iterations
+        avg_times.append(avg_time)
+
         best_solutions.append(best_solution)
 
     print(f"Average time per iteration: {np.mean(avg_times)} s")
