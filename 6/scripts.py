@@ -78,14 +78,16 @@ def ils(matrix, start_time, time_limit):
     y, cost = steepest(matrix, random_solution(matrix))
     best_solution, best_cost = y, cost
     
+    ils_iterations = 1
     finish_time = time_limit + start_time
     while time.time() < finish_time:
         x = perturb(y)
         y, y_cost = steepest(matrix, x)
         if y_cost < best_cost:
             best_solution, best_cost = y, y_cost
+        ils_iterations += 1
 
-    return best_solution, best_cost
+    return best_solution, best_cost, ils_iterations
 
 
 # avg of 4 MSLS exps -> 7.2s/iteration -> 7.2s/i * 200i = 1440s   
@@ -95,18 +97,21 @@ def run_ils(path: str, n_iterations=200, n_runs=20):
 
     best_solutions = []
     avg_times = []
+    avg_ils_iterations = []
 
     for _ in range(n_runs):
         start = time.time()
 
-        best_solution = ils(matrix, start, max_time_per_run)
+        best_solution, best_cost, ils_iterations = ils(matrix, start, max_time_per_run)
 
         end = time.time()
         
-        avg_time = (end - start)
+        avg_time = (end - start) / ils_iterations
+        avg_ils_iterations.append(ils_iterations)
         avg_times.append(avg_time)
 
-        best_solutions.append(best_solution)
+        best_solutions.append((best_solution, best_cost))
 
     print(f"Average time per iteration: {np.mean(avg_times)} s")
+    print(f"Average ILS iterations: {np.mean(avg_ils_iterations)}")
     summarize_results(best_solutions, path)
