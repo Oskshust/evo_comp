@@ -77,8 +77,9 @@ def perturb(solution):
 def ils(matrix, start_time, time_limit):    
     y, cost = steepest(matrix, random_solution(matrix))
     best_solution, best_cost = y, cost
-
-    while time.time() - start_time < time_limit:
+    
+    finish_time = time_limit + start_time
+    while time.time() < finish_time:
         x = perturb(y)
         y, y_cost = steepest(matrix, x)
         if y_cost < best_cost:
@@ -87,9 +88,9 @@ def ils(matrix, start_time, time_limit):
     return best_solution, best_cost
 
 
-# avg of 4 MSLS exps -> 7.2s/iteration -> 7.2s/i * 200i = 1440s -> 1440s-7s (starting iteration) = 1433s   
+# avg of 4 MSLS exps -> 7.2s/iteration -> 7.2s/i * 200i = 1440s   
 def run_ils(path: str, n_iterations=200, n_runs=20):
-    max_time_per_run = n_iterations * 7.2 - 7.2
+    max_time_per_run = n_iterations * 7.2
     matrix = get_dist_matrix(path)
 
     best_solutions = []
@@ -102,7 +103,7 @@ def run_ils(path: str, n_iterations=200, n_runs=20):
 
         end = time.time()
         
-        avg_time = (end - start) / n_iterations
+        avg_time = (end - start)
         avg_times.append(avg_time)
 
         best_solutions.append(best_solution)
