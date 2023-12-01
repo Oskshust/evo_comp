@@ -91,8 +91,8 @@ def ils(matrix, start_time, time_limit):
 
 
 # avg of 4 MSLS exps -> 7.2s/iteration -> 7.2s/i * 200i = 1440s   
-def run_ils(path: str, n_iterations=200, n_runs=20):
-    max_time_per_run = n_iterations * 7.2
+def run_ils(path: str, n_runs=20):
+    max_time_per_run = 200 * 7.2
     matrix = get_dist_matrix(path)
 
     best_solutions = []
