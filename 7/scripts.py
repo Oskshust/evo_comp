@@ -55,6 +55,8 @@ def find_regret_with_solution(solution, vertex_id, matrix):
     costs = []
     solutions = []
     for i in range(len(solution)+1):
+        if vertex_id in solution:
+            continue
         new_sol = solution[:i] + [vertex_id] + solution[i:]
         solutions.append(new_sol)
         costs.append(calculate_cost(new_sol, matrix))
@@ -77,11 +79,11 @@ def repair(matrix, destroyed_solution):
     
     current_cost = calculate_cost(cycle, matrix)
 
-    unvisited = np.ones(len(destroyed_solution), dtype='bool')
+    unvisited = np.ones(len(matrix), dtype='bool')
 
     for id in range(len(destroyed_solution)):
         if destroyed_solution[id] != -1:
-            unvisited[id] = False
+            unvisited[destroyed_solution[id]] = False
 
     while np.any(unvisited):
         scores = -np.ones(shape=unvisited.shape) * np.inf
@@ -109,7 +111,7 @@ def repair(matrix, destroyed_solution):
 def lns(matrix, finish_time, with_ls):
     x, cost = steepest(matrix, random_solution(matrix))
         
-    best_solution, best_cost = x, cost
+    best_solution, best_cost = x.copy(), cost
     
     ils_iterations = 1
     while time.time() < finish_time:
@@ -119,11 +121,11 @@ def lns(matrix, finish_time, with_ls):
         if with_ls:
             y, y_cost = steepest(matrix, x)
             if y_cost < best_cost:
-                best_solution, best_cost = y, y_cost
+                best_solution, best_cost = y.copy(), y_cost
                 x = y
         else:
             if x_cost < best_cost:
-                best_solution, best_cost = x, x_cost
+                best_solution, best_cost = x.copy(), x_cost
 
         ils_iterations += 1
 
