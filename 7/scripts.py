@@ -40,11 +40,70 @@ def steepest(matrix, starting_sol):
 
 
 def destroy(solution):
+    # 20-30% length of the solution
+    subpath_length = np.random.randint(20, 31)
+    
+    start_index = np.random.randint(0, len(solution))
+    
+    for i in range(start_index, start_index + subpath_length):
+        solution[i%len(solution)] = -1
+    
     return solution
 
 
-def repair(solution):
-    return solution
+def find_regret_with_solution(solution, vertex_id, matrix):
+    costs = []
+    solutions = []
+    for i in range(len(solution)+1):
+        new_sol = solution[:i] + [vertex_id] + solution[i:]
+        solutions.append(new_sol)
+        costs.append(calculate_cost(new_sol, matrix))
+    return get_regret_n_sol(costs, solutions)
+
+
+def get_regret_n_sol(costs, solutions):
+    first = np.argmin(costs)
+    cost1 = costs[first]
+    sol = solutions[first]
+    costs = np.delete(costs, first)
+    second = np.argmin(costs)
+    cost2 = costs[second]
+    return cost2 - cost1, sol
+
+
+# weighted regret heuristic with weight =  0.5
+def repair(matrix, destroyed_solution):
+    cycle = [vertex for vertex in destroyed_solution if vertex != -1]
+    
+    current_cost = calculate_cost(cycle, matrix)
+
+    unvisited = np.ones(len(destroyed_solution), dtype='bool')
+
+    for id in range(len(destroyed_solution)):
+        if destroyed_solution[id] != -1:
+            unvisited[id] = False
+
+    while np.any(unvisited):
+        scores = -np.ones(shape=unvisited.shape) * np.inf
+        new_costs = np.zeros(shape=unvisited.shape)
+        new_sols = np.zeros(shape=unvisited.shape, dtype=np.ndarray)
+
+        for vertex_id in np.where(unvisited == True)[0]:
+            regret, solution = find_regret_with_solution(cycle, vertex_id, matrix)
+            new_cost = calculate_cost(solution, matrix)
+            increase = new_cost - current_cost
+            
+            score = 0.5 * regret - 0.5 * increase
+            scores[vertex_id] = score
+            new_sols[vertex_id] = solution
+            new_costs[vertex_id] = new_cost
+
+        highest_score_id = np.argmax(scores)
+        cycle = new_sols[highest_score_id]
+        unvisited[highest_score_id] = False
+        current_cost = new_costs[highest_score_id]
+
+    return cycle, current_cost
 
 
 def lns(matrix, finish_time, with_ls):
@@ -55,7 +114,7 @@ def lns(matrix, finish_time, with_ls):
     ils_iterations = 1
     while time.time() < finish_time:
         x = destroy(x)
-        x = repair(x)
+        x, x_cost = repair(matrix, x)
         
         if with_ls:
             y, y_cost = steepest(matrix, x)
@@ -63,7 +122,6 @@ def lns(matrix, finish_time, with_ls):
                 best_solution, best_cost = y, y_cost
                 x = y
         else:
-            x_cost = calculate_cost(x, matrix)
             if x_cost < best_cost:
                 best_solution, best_cost = x, x_cost
 
