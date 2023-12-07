@@ -52,25 +52,32 @@ def destroy(solution):
 
 
 def find_regret_with_solution(solution, vertex_id, matrix):
-    costs = []
     solutions = []
-    for i in range(len(solution)+1):
+    deltas = []
+
+    for i in range(len(solution)):
         if vertex_id in solution:
             continue
+
         new_sol = solution[:i] + [vertex_id] + solution[i:]
         solutions.append(new_sol)
-        costs.append(calculate_cost(new_sol, matrix))
-    return get_regret_n_sol(costs, solutions)
+        
+        cost_out = matrix[solution[i - 1]][solution[i]]
+        cost_in = matrix[solution[i - 1]][vertex_id] + matrix[vertex_id][solution[i]]
+        
+        deltas.append(cost_in - cost_out)
+
+    return get_regret_n_sol(deltas, solutions)
 
 
-def get_regret_n_sol(costs, solutions):
-    first = np.argmin(costs)
-    cost1 = costs[first]
+def get_regret_n_sol(deltas, solutions):
+    first = np.argmin(deltas)
+    delta_1 = deltas[first]
     sol = solutions[first]
-    costs = np.delete(costs, first)
-    second = np.argmin(costs)
-    cost2 = costs[second]
-    return cost2 - cost1, sol
+    deltas = np.delete(deltas, first)
+    second = np.argmin(deltas)
+    delta_2 = deltas[second]
+    return delta_2 - delta_1, sol, delta_1
 
 
 # weighted regret heuristic with weight =  0.5
@@ -87,23 +94,21 @@ def repair(matrix, destroyed_solution):
 
     while np.any(unvisited):
         scores = -np.ones(shape=unvisited.shape) * np.inf
-        new_costs = np.zeros(shape=unvisited.shape)
+        new_deltas = np.zeros(shape=unvisited.shape)
         new_sols = np.zeros(shape=unvisited.shape, dtype=np.ndarray)
 
         for vertex_id in np.where(unvisited == True)[0]:
-            regret, solution = find_regret_with_solution(cycle, vertex_id, matrix)
-            new_cost = calculate_cost(solution, matrix)
-            increase = new_cost - current_cost
-            
-            score = 0.5 * regret - 0.5 * increase
+            regret, solution, delta = find_regret_with_solution(cycle, vertex_id, matrix)
+
+            score = 0.5 * regret - 0.5 * delta
             scores[vertex_id] = score
             new_sols[vertex_id] = solution
-            new_costs[vertex_id] = new_cost
+            new_deltas[vertex_id] = delta
 
         highest_score_id = np.argmax(scores)
         cycle = new_sols[highest_score_id]
         unvisited[highest_score_id] = False
-        current_cost = new_costs[highest_score_id]
+        current_cost += new_deltas[highest_score_id]
 
     return cycle, current_cost
 
@@ -113,7 +118,7 @@ def lns(matrix, finish_time, with_ls):
         
     best_solution, best_cost = x.copy(), cost
     
-    ils_iterations = 1
+    iterations = 1
     while time.time() < finish_time:
         x = destroy(x)
         x, x_cost = repair(matrix, x)
@@ -127,33 +132,33 @@ def lns(matrix, finish_time, with_ls):
             if x_cost < best_cost:
                 best_solution, best_cost = x.copy(), x_cost
 
-        ils_iterations += 1
+        iterations += 1
 
-    return best_solution, best_cost, ils_iterations
+    return best_solution, best_cost, iterations
 
 
 # avg of 4 MSLS exps -> 7.2s/iteration -> 7.2s/i * 200i = 1440s   
 def run_lns(path: str, n_runs=20, with_ls=True):
-    max_time_per_run = 5 * 7.2
+    max_time_per_run = 200 * 7.2
     matrix = get_dist_matrix(path)
 
     best_solutions = []
     avg_times = []
-    avg_ils_iterations = []
+    avg_iterations = []
 
     for _ in range(n_runs):
         start = time.time()
 
-        best_solution, best_cost, ils_iterations = lns(matrix, start + max_time_per_run, with_ls)
+        best_solution, best_cost, iterations = lns(matrix, start + max_time_per_run, with_ls)
 
         end = time.time()
         
-        avg_time = (end - start) / ils_iterations
-        avg_ils_iterations.append(ils_iterations)
+        avg_time = (end - start) / iterations
+        avg_iterations.append(iterations)
         avg_times.append(avg_time)
 
         best_solutions.append((best_solution, best_cost))
 
     print(f"Average time per iteration: {np.mean(avg_times)} s")
-    print(f"Average ILS iterations: {np.mean(avg_ils_iterations)}")
+    print(f"Average iterations: {np.mean(avg_iterations)}")
     summarize_results(best_solutions, path)
