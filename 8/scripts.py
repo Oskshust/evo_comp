@@ -104,6 +104,7 @@ def draw_charts(path: str, n_runs=1000):
     axs[0].set_title('Nodes')
     axs[0].set_xlabel('Objective Function Value')
     axs[0].set_ylabel('Avg Similarity')
+    print("Correlation for Nodes Avg Sim: " + str(np.corrcoef(sorted_f_values, sorted_data)[0, 1]))
 
     sorted_pairs = sorted(zip(f_values, edges_avg))
     sorted_f_values, sorted_data = zip(*sorted_pairs)
@@ -112,6 +113,7 @@ def draw_charts(path: str, n_runs=1000):
     axs[1].set_title('Edges')
     axs[1].set_xlabel('Objective Function Value')
     axs[1].set_ylabel('Avg Similarity')
+    print("Correlation for Edges Avg Sim: " + str(np.corrcoef(sorted_f_values, sorted_data)[0, 1]))
 
     sorted_pairs = sorted(zip(f_values, nodes_best))
     sorted_f_values, sorted_data = zip(*sorted_pairs)
@@ -120,6 +122,7 @@ def draw_charts(path: str, n_runs=1000):
     axs[2].set_title('Nodes')
     axs[2].set_xlabel('Objective Function Value')
     axs[2].set_ylabel('Best Similarity')
+    print("Correlation for Nodes Best Sim: " + str(np.corrcoef(sorted_f_values, sorted_data)[0, 1]))
 
     sorted_pairs = sorted(zip(f_values, edges_best))
     sorted_f_values, sorted_data = zip(*sorted_pairs)
@@ -128,6 +131,7 @@ def draw_charts(path: str, n_runs=1000):
     axs[3].set_title('Edges')
     axs[3].set_xlabel('Objective Function Value')
     axs[3].set_ylabel('Best Similarity')
+    print("Correlation for Edges Best Sim: " + str(np.corrcoef(sorted_f_values, sorted_data)[0, 1]))
 
     plt.tight_layout()
     plt.show()
