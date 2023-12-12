@@ -1,5 +1,5 @@
 import numpy as np
-
+import matplotlib.pyplot as plt
 from common import *
 
 
@@ -53,6 +53,7 @@ def run_global_convexity(path: str, n_runs=1000):
     matrix = get_dist_matrix(path)
 
     local_optima = []
+    local__optima_costs = []
     best_solution = None
     best_cost = np.inf
 
@@ -66,6 +67,7 @@ def run_global_convexity(path: str, n_runs=1000):
             best_cost = cost
 
         local_optima.append(solution)
+        local__optima_costs.append(cost)
 
     similarities = {
         "best": {
@@ -83,4 +85,49 @@ def run_global_convexity(path: str, n_runs=1000):
             similarities["best"][measure].append(calculate_similarity(solution_a, best_solution, measure))
             similarities["average"][measure].append(sum([calculate_similarity(solution_a, b, measure) for b in local_optima]) / n_runs)
 
-    return similarities
+    return similarities, local__optima_costs
+
+
+def draw_charts(path: str, n_runs=1000):
+    sims, f_values = run_global_convexity(path, n_runs)
+    nodes_avg = sims['average']['nodes']
+    nodes_best = sims['best']['nodes']
+    edges_avg = sims['average']['edges']
+    edges_best = sims['best']['edges']
+
+    fig, axs = plt.subplots(4, figsize=(10, 10))
+
+    sorted_pairs = sorted(zip(f_values, nodes_avg))
+    sorted_f_values, sorted_data = zip(*sorted_pairs)
+
+    axs[0].scatter(sorted_data, sorted_f_values, color='g')
+    axs[0].set_title('Nodes')
+    axs[0].set_xlabel('Objective Function Value')
+    axs[0].set_ylabel('Avg Similarity')
+
+    sorted_pairs = sorted(zip(f_values, edges_avg))
+    sorted_f_values, sorted_data = zip(*sorted_pairs)
+
+    axs[1].scatter(sorted_data, sorted_f_values, color='b')
+    axs[1].set_title('Edges')
+    axs[1].set_xlabel('Objective Function Value')
+    axs[1].set_ylabel('Avg Similarity')
+
+    sorted_pairs = sorted(zip(f_values, nodes_best))
+    sorted_f_values, sorted_data = zip(*sorted_pairs)
+
+    axs[2].scatter(sorted_data, sorted_f_values, color='g')
+    axs[2].set_title('Nodes')
+    axs[2].set_xlabel('Objective Function Value')
+    axs[2].set_ylabel('Best Similarity')
+
+    sorted_pairs = sorted(zip(f_values, edges_best))
+    sorted_f_values, sorted_data = zip(*sorted_pairs)
+
+    axs[3].scatter(sorted_data, sorted_f_values, color='b')
+    axs[3].set_title('Edges')
+    axs[3].set_xlabel('Objective Function Value')
+    axs[3].set_ylabel('Best Similarity')
+
+    plt.tight_layout()
+    plt.show()
