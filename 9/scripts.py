@@ -4,18 +4,6 @@ import time
 from common import *
 
 
-def destroy(solution):
-    # 20-30% length of the solution
-    subpath_length = np.random.randint(20, 31)
-    
-    start_index = np.random.randint(0, len(solution))
-    
-    for i in range(start_index, start_index + subpath_length):
-        solution[i%len(solution)] = -1
-    
-    return solution
-
-
 def find_regret_with_solution(solution, vertex_id, matrix):
     solutions = []
     deltas = []
@@ -78,44 +66,79 @@ def repair(matrix, destroyed_solution):
     return cycle, current_cost
 
 
-def operator1():
+def random_repair(solution):
+    child = solution.copy()
+    for i in range(len(child)):
+        available_nodes = list(set(range(200)) - set(child))
+        if child[i] == -1:
+            child[i] = np.random.choice(available_nodes, 1)[0]
+
+    return child
+
+
+def operator_common_ne(parent_1, parent_2, matrix):
+    # We locate in the offspring all common nodes and edges and fill the rest of the solution at random
+    
+    child = np.array([-1 for i in range(100)])
+    
+    for i in range(len(parent_2) - 1):
+        if parent_2[i] in parent_1 and parent_2[i+1] in parent_1:
+            index_1 = np.where(parent_1 == parent_2[i])[0]
+            index_2 = np.where(parent_1 == parent_2[i+1])[0]
+            if abs(index_1 - index_2) == 1:
+                child[index_1] = parent_1[index_1]
+                child[index_2] = parent_1[index_2]
+
+    for node in parent_2:
+        if node in parent_1:
+            index = np.where(parent_1 == node)[0][0]
+            child[index] = node
+
+    child = random_repair(child)
+
+    return child, calculate_cost(child, matrix)
+
+
+def operator_dest_rep(parent_1, parent_2):
     return None
 
 
-def operator2():
-    return None
+def get_children(parent_1, parent_2, matrix):
+    child_1, cost_1 = operator_common_ne(parent_1, parent_2, matrix)
+    child_2, cost_2 = operator_common_ne(parent_2, parent_1, matrix)
+    return child_1, cost_1, child_2, cost_2
 
 
-def get_child(parent_1, parent_2):
-    # TODO
-    return parent_1, parent_2
-
-
-def breed(population, breed_ops=20):
+def breed(population, matrix, breed_ops=20):
     new_population = population.copy()
-    for i in range(breed_ops):
+    costs_of_population = set(cost for sol, cost in new_population)
+    i = 0
+    while i < breed_ops:
         parent_1id, parent_2id = np.random.choice(len(population), 2, replace=False)
         parent_1, parent_2 = population[parent_1id], population[parent_2id]
 
-        child_1, child_2 = get_child(parent_1, parent_2)
+        child_1, cost_1, child_2, cost_2 = get_children(parent_1[0], parent_2[0], matrix)
+    
+        while cost_1 in costs_of_population or cost_2 in costs_of_population:
+            child_1, cost_1, child_2, cost_2 = get_children(parent_1, parent_2, matrix)
+        i += 1
 
-        new_population.append(child_1)
-        new_population.append(child_2)
+        new_population.append((child_1, cost_1))
+        new_population.append((child_2, cost_2))
 
-    new_population = sorted(new_population)
+    new_population = sorted(new_population, key=lambda x: x[1])
 
-    return new_population
+    return new_population[:20]
 
 
 def hea(matrix, finish_time):
     population =  [random_solution(matrix) for i in range(20)]
-        
     best_solution, best_cost = population[0][0].copy(), population[0][1]
     
     iterations = 1
     while time.time() < finish_time:
         
-        population = breed(population)
+        population = breed(population, matrix)
         
         current_best, current_best_cost = population[0][0], population[0][1] 
         if current_best_cost < best_cost:

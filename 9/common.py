@@ -118,4 +118,4 @@ def random_solution(matrix):
 
     sol = np.array(np.random.choice(matrix.shape[0], size=n, replace=False))
 
-    return sol
+    return sol, calculate_cost(sol, matrix)
