@@ -115,9 +115,9 @@ def breed(population, matrix, breed_ops=20):
     i = 0
     while i < breed_ops:
         parent_1id, parent_2id = np.random.choice(len(population), 2, replace=False)
-        parent_1, parent_2 = population[parent_1id], population[parent_2id]
+        parent_1, parent_2 = population[parent_1id][0], population[parent_2id][0]
 
-        child_1, cost_1, child_2, cost_2 = get_children(parent_1[0], parent_2[0], matrix)
+        child_1, cost_1, child_2, cost_2 = get_children(parent_1, parent_2, matrix)
     
         while cost_1 in costs_of_population or cost_2 in costs_of_population:
             child_1, cost_1, child_2, cost_2 = get_children(parent_1, parent_2, matrix)
