@@ -76,9 +76,7 @@ def random_repair(solution):
     return child
 
 
-def operator_common_ne(parent_1, parent_2, matrix):
-    # We locate in the offspring all common nodes and edges and fill the rest of the solution at random
-    
+def get_unfinished_child(parent_1, parent_2):
     child = np.array([-1 for i in range(100)])
     
     for i in range(len(parent_2) - 1):
@@ -93,23 +91,28 @@ def operator_common_ne(parent_1, parent_2, matrix):
         if node in parent_1:
             index = np.where(parent_1 == node)[0][0]
             child[index] = node
+    
+    return child
 
-    child = random_repair(child)
+
+def operator_random_rep(parent_1, parent_2, matrix):
+    # We locate in the offspring all common nodes and edges and fill the rest of the solution at random
+    child = random_repair(get_unfinished_child(parent_1, parent_2))
 
     return child, calculate_cost(child, matrix)
 
 
-def operator_dest_rep(parent_1, parent_2):
-    return None
+def operator_reg_rep(parent_1, parent_2, matrix):
+    return repair(matrix, get_unfinished_child(parent_1, parent_2))
 
 
 def get_children(parent_1, parent_2, matrix):
-    child_1, cost_1 = operator_common_ne(parent_1, parent_2, matrix)
-    child_2, cost_2 = operator_common_ne(parent_2, parent_1, matrix)
+    child_1, cost_1 = operator_random_rep(parent_1, parent_2, matrix)
+    child_2, cost_2 = operator_reg_rep(parent_1, parent_2, matrix)
     return child_1, cost_1, child_2, cost_2
 
 
-def breed(population, matrix, breed_ops=20):
+def breed(population, matrix, breed_ops=5):
     new_population = population.copy()
     costs_of_population = set(cost for sol, cost in new_population)
     i = 0
@@ -118,9 +121,10 @@ def breed(population, matrix, breed_ops=20):
         parent_1, parent_2 = population[parent_1id][0], population[parent_2id][0]
 
         child_1, cost_1, child_2, cost_2 = get_children(parent_1, parent_2, matrix)
-    
-        while cost_1 in costs_of_population or cost_2 in costs_of_population:
-            child_1, cost_1, child_2, cost_2 = get_children(parent_1, parent_2, matrix)
+        while cost_1 in costs_of_population:
+            child_1, cost_1 = operator_random_rep(parent_1, parent_2, matrix)
+        while cost_2 in costs_of_population:
+            child_2, cost_2 = operator_reg_rep(parent_2, parent_1, matrix)
         i += 1
 
         new_population.append((child_1, cost_1))
