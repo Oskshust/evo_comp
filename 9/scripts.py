@@ -112,11 +112,11 @@ def get_children(parent_1, parent_2, matrix):
     return child_1, cost_1, child_2, cost_2
 
 
-def breed(population, matrix, breed_ops=10):
+def breed(population, matrix, population_size=10):
     new_population = population.copy()
     costs_of_population = set(cost for sol, cost in new_population)
     i = 0
-    while i < breed_ops:
+    while i < population_size:
         parent_1id, parent_2id = np.random.choice(len(population), 2, replace=False)
         parent_1, parent_2 = population[parent_1id][0], population[parent_2id][0]
 
@@ -132,7 +132,7 @@ def breed(population, matrix, breed_ops=10):
 
     new_population = sorted(new_population, key=lambda x: x[1])
 
-    return new_population[:breed_ops]
+    return new_population[:population_size]
 
 
 def hea(matrix, finish_time):
