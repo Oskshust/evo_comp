@@ -112,7 +112,7 @@ def get_children(parent_1, parent_2, matrix):
     return child_1, cost_1, child_2, cost_2
 
 
-def breed(population, matrix, breed_ops=5):
+def breed(population, matrix, breed_ops=10):
     new_population = population.copy()
     costs_of_population = set(cost for sol, cost in new_population)
     i = 0
@@ -136,7 +136,7 @@ def breed(population, matrix, breed_ops=5):
 
 
 def hea(matrix, finish_time):
-    population =  [random_solution(matrix) for i in range(20)]
+    population =  [steepest(matrix, random_solution(matrix)[0]) for i in range(20)]
     best_solution, best_cost = population[0][0].copy(), population[0][1]
     
     iterations = 1
@@ -154,7 +154,7 @@ def hea(matrix, finish_time):
 
 
 def run_hea(path: str, n_runs=20):
-    max_time_per_run = 2 * 7.2
+    max_time_per_run = 100 * 7.2
     matrix = get_dist_matrix(path)
 
     best_solutions = []
@@ -177,3 +177,38 @@ def run_hea(path: str, n_runs=20):
     print(f"Average time per iteration: {np.mean(avg_times)} s")
     print(f"Average iterations: {np.mean(avg_iterations)}")
     summarize_results(best_solutions, path)
+
+
+def get_neighborhood(solution, matrix):
+    solution_length = len(solution)
+
+    all_nodes = set(range(len(matrix)))
+    available_nodes = all_nodes - set(solution)
+
+    neighbors = [(("edge", i, j), calculate_delta_edge(solution, matrix, i, j)) for i in range(solution_length - 1) for j in range(i + 1, solution_length)]    
+    neighbors = neighbors + [(("node", node, i), calculate_delta_node(solution, matrix, node, i)) for i in range(solution_length) for node in available_nodes]
+
+    return neighbors
+
+
+def steepest(matrix, starting_sol):
+    best_sol = np.array(starting_sol)
+    best_delta = 0
+
+    neighbourhood = get_neighborhood(best_sol, matrix)
+
+    while len(neighbourhood):
+        deltas = np.array([delta for _, delta in neighbourhood])
+        best_index = np.argmin(deltas)
+        _, best_delta = neighbourhood[best_index]
+
+        if best_delta >= 0:
+            break
+
+        best_move, best_delta = neighbourhood[best_index]
+
+        best_sol = apply_move(best_sol, best_move)
+
+        neighbourhood = get_neighborhood(best_sol, matrix)
+
+    return best_sol, calculate_cost(best_sol, matrix)
