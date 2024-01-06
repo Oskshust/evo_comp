@@ -132,7 +132,7 @@ def breed(population, matrix, breed_ops=10):
 
     new_population = sorted(new_population, key=lambda x: x[1])
 
-    return new_population[:20]
+    return new_population[:breed_ops]
 
 
 def hea(matrix, finish_time):
