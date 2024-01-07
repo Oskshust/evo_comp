@@ -136,7 +136,7 @@ def breed(population, matrix, population_size=10):
 
 
 def hea(matrix, finish_time):
-    population =  [steepest(matrix, random_solution(matrix)[0]) for i in range(20)]
+    population = [steepest(matrix, random_solution(matrix)[0]) for i in range(20)]
     best_solution, best_cost = population[0][0].copy(), population[0][1]
     
     iterations = 1
@@ -154,7 +154,7 @@ def hea(matrix, finish_time):
 
 
 def run_hea(path: str, n_runs=20):
-    max_time_per_run = 100 * 7.2
+    max_time_per_run = 200 * 7.2
     matrix = get_dist_matrix(path)
 
     best_solutions = []

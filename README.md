@@ -38,8 +38,8 @@ Large-scale neighborhood search: https://github.com/Oskshust/evo_comp/tree/main/
 
 ## Assignment 8
 
-...
+Global convexity: https://github.com/Oskshust/evo_comp/tree/main/8
 
 ## Assignment 9
 
-...
+Hybrid evolutionary algorithm: https://github.com/Oskshust/evo_comp/tree/main/9
