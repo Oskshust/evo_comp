@@ -50,10 +50,10 @@ def multi_segment_shuffle_perturbation(solution):
     return new_solution
 
 
-def algo(matrix, start_time, time_limit):    
+def algo(matrix, start_time, time_limit):
     y, cost = steepest(matrix, random_solution(matrix))
     best_solution, best_cost = y, cost
-    
+
     ils_iterations = 1
     finish_time = time_limit + start_time
     while time.time() < finish_time:
@@ -65,27 +65,8 @@ def algo(matrix, start_time, time_limit):
 
     return best_solution, best_cost, ils_iterations
 
-# def algo(matrix, start_time, time_limit):    
-#     y, cost = steepest(matrix, random_solution(matrix))
-#     best_solution, best_cost = y, cost
-    
-#     ils_iterations = 1
-#     num_shuffles = 2
-#     finish_time = time_limit + start_time
-#     while time.time() < finish_time:
-#         x = double_bridge_move(best_solution)
-#         y, y_cost = steepest(matrix, x)
-#         if y_cost < best_cost:
-#             best_solution, best_cost = y, y_cost
-#             num_shuffles = 2  # reset the number of shuffles
-#         else:
-#             num_shuffles += 1  # increase the number of shuffles
-#         ils_iterations += 1
 
-#     return best_solution, best_cost, ils_iterations
-
-
-# avg of 4 MSLS exps -> 7.2s/iteration -> 7.2s/i * 200i = 1440s   
+# avg of 4 MSLS exps -> 7.2s/iteration -> 7.2s/i * 200i = 1440s
 def run_algo(path: str, n_runs=20):
     max_time_per_run = 200 * 7.2
     matrix = get_dist_matrix(path)
